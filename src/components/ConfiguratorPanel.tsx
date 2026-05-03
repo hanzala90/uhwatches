@@ -1,0 +1,499 @@
+'use client';
+
+import React, { useState, useRef } from 'react';
+import {
+  useWatchStore, WatchModel, EngravingFont,
+  MovementType, CaseBackType, GlassType, BuckleType, HandsType, LugsType
+} from '@/store/useWatchStore';
+import { Settings2, Type, Image as LucideImage, Palette, Watch, Cog, Wrench, ChevronRight, ChevronLeft, CheckCircle2 } from 'lucide-react';
+import clsx from 'clsx';
+import { twMerge } from 'tailwind-merge';
+import { useRouter } from 'next/navigation';
+
+function cn(...inputs: (string | undefined | null | false)[]) {
+  return twMerge(clsx(inputs));
+}
+
+const TOTAL_STEPS = 6;
+
+const ConfiguratorPanel = () => {
+  const [step, setStep] = useState(1);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
+
+  const {
+    baseModel, setBaseModel, caseShape, setCaseShape,
+    engraving, setEngravingText, setEngravingFont,
+    designOptions, setDialURL,
+    structuralOptions, setMovement, setCaseBack, setGlass, setBuckle, setHands, setLugs,
+    totalPrice, setUploadedImage, uploadedImage
+  } = useWatchStore();
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setUploadedImage(event.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleOrder = () => router.push('/checkout');
+
+  const nextStep = () => setStep(prev => Math.min(prev + 1, TOTAL_STEPS));
+  const prevStep = () => setStep(prev => Math.max(prev - 1, 1));
+
+  // --- Step Components --- //
+
+  const Step1 = () => (
+    <section className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
+      <div className="space-y-6">
+        <div>
+          <p className="text-xs uppercase tracking-widest text-[#C5A059] mb-4 font-semibold">1. Foundation</p>
+          <h3 className="text-2xl font-light text-white mb-2">Case & Base Model</h3>
+          <p className="text-white/50 text-sm">Select the structural foundation for your timepiece.</p>
+        </div>
+
+        <div className="space-y-4">
+          <p className="text-[10px] uppercase tracking-widest text-white/40">Case Shape</p>
+          <div className="grid grid-cols-2 gap-3">
+            {(['round', 'square', 'skeleton', 'octagonal', 'octagonal-round'] as typeof caseShape[]).map((shape) => (
+              <button
+                key={shape}
+                onClick={() => setCaseShape(shape)}
+                className={cn(
+                  "py-4 rounded-xl border text-sm font-medium capitalize transition-all duration-300",
+                  caseShape === shape ? "bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.2)]" : "bg-white/5 text-white/60 border-white/10 hover:border-white/30 hover:bg-white/10"
+                )}
+              >
+                {shape}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-4 pt-4 border-t border-white/10">
+          <p className="text-[10px] uppercase tracking-widest text-white/40">Strap Type</p>
+          <div className="grid grid-cols-1 gap-3">
+            {([
+              { id: 'leather', label: 'Leather Strap', desc: 'Genuine leather, hand-stitched', img: '/images/strap_black.png', price: 10000 },
+              { id: 'metal', label: 'Metal Bracelet', desc: 'Stainless steel link bracelet', img: '/images/watch_metal.png', price: 15000 },
+              { id: 'sports', label: 'Sports Rubber Band', desc: 'Premium silicone sport strap', img: '/images/watch_sports.png', price: 12000 },
+            ] as { id: WatchModel; label: string; desc: string; img: string; price: number }[]).map((model) => (
+              <button
+                key={model.id}
+                onClick={() => setBaseModel(model.id)}
+                className={cn(
+                  "py-3 rounded-xl border text-sm font-medium transition-all duration-300 flex items-center gap-4 px-4 overflow-hidden",
+                  baseModel === model.id ? "bg-white/10 border-[#C5A059] shadow-[0_0_15px_rgba(197,160,89,0.2)]" : "bg-white/5 text-white/60 border-white/10 hover:border-white/30 hover:bg-white/10"
+                )}
+              >
+                <div className="w-16 h-10 rounded-lg overflow-hidden border border-white/10 shrink-0 bg-gray-200">
+                  <img src={model.img} alt={model.label} className="w-full h-full object-cover" />
+                </div>
+                <div className="text-left flex-1">
+                  <p className={cn("font-semibold text-sm", baseModel === model.id ? "text-white" : "text-white/70")}>{model.label}</p>
+                  <p className="text-xs text-white/40">{model.desc}</p>
+                </div>
+                <span className="text-[10px] text-white/40 shrink-0">PKR {model.price.toLocaleString()}</span>
+                {baseModel === model.id && <CheckCircle2 size={16} className="text-[#C5A059] shrink-0" />}
+              </button>
+            ))}
+          </div>
+
+          {/* Leather color sub-selection */}
+          {baseModel === 'leather' && (
+            <div className="pt-3 border-t border-white/5 space-y-3">
+              <p className="text-[10px] uppercase tracking-widest text-white/40">Leather Color</p>
+              <div className="grid grid-cols-3 gap-2">
+                {([
+                  { color: 'Black', img: '/images/strap_black.png' },
+                  { color: 'Brown', img: '/images/strap_brown.png' },
+                  { color: 'Dark Brown', img: '/images/strap_darkbrown.png' },
+                ]).map((variant) => (
+                  <button
+                    key={variant.color}
+                    onClick={() => setStrapColor(variant.color.toLowerCase())}
+                    className={cn(
+                      "rounded-xl overflow-hidden border-2 transition-all duration-300 aspect-video relative",
+                      designOptions.strapColor === variant.color.toLowerCase() ? "border-[#C5A059] shadow-[0_0_10px_rgba(197,160,89,0.3)]" : "border-white/10 opacity-70 hover:opacity-100 hover:border-white/30"
+                    )}
+                  >
+                    <img src={variant.img} alt={variant.color} className="w-full h-full object-cover" />
+                    <div className="absolute inset-x-0 bottom-0 bg-black/70 py-1 text-[9px] text-white text-center uppercase tracking-widest">
+                      {variant.color}
+                    </div>
+                    {designOptions.strapColor === variant.color.toLowerCase() && (
+                      <div className="absolute top-1 right-1"><CheckCircle2 size={12} className="text-[#C5A059]" /></div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+
+
+  const Step2 = () => (
+    <section className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
+      <div className="space-y-6">
+        <div>
+          <p className="text-xs uppercase tracking-widest text-[#C5A059] mb-4 font-semibold">2. The Face</p>
+          <h3 className="text-2xl font-light text-white mb-2">Dial Selection</h3>
+          <p className="text-white/50 text-sm">Choose the background canvas of your watch.</p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          {[
+            { id: 'black', url: '/images/dial_black.png', label: 'Black Roman', sublabel: 'Gold indices' },
+            { id: 'silver', url: '/images/dial_silver.png', label: 'Silver Sport', sublabel: 'Brushed sunburst' },
+            { id: 'skeleton', url: '/images/dial_skeleton.png', label: 'Skeleton Gold', sublabel: 'Open-worked' },
+            { id: 'white', url: '/images/dial_white.png', label: 'Classic White', sublabel: 'Minimal' },
+          ].map(dial => (
+            <button
+              key={dial.id}
+              onClick={() => setDialURL(dial.url)}
+              className={cn(
+                "h-36 rounded-2xl border-2 transition-all duration-300 overflow-hidden relative group flex flex-col items-end justify-end p-2 bg-cover bg-center",
+                designOptions.dialURL === dial.url ? "border-[#C5A059] shadow-[0_0_20px_rgba(197,160,89,0.4)]" : "border-white/10 opacity-70 hover:opacity-100 hover:border-white/30"
+              )}
+              style={{ backgroundImage: `url(${dial.url})` }}
+            >
+              {designOptions.dialURL === dial.url && (
+                <div className="absolute top-2 left-2"><CheckCircle2 size={16} className="text-[#C5A059]" /></div>
+              )}
+              <div className="bg-black/80 backdrop-blur-sm text-left w-full px-2 py-1.5 rounded-lg">
+                <p className="text-white text-[11px] font-semibold leading-tight">{dial.label}</p>
+                <p className="text-white/50 text-[9px] uppercase tracking-wider">{dial.sublabel}</p>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+
+  const Step3 = () => (
+    <section className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
+      <div className="space-y-6">
+        <div>
+          <p className="text-xs uppercase tracking-widest text-[#C5A059] mb-4 font-semibold">3. Internal Mechanics</p>
+          <h3 className="text-2xl font-light text-white mb-2">Movements & Glass</h3>
+          <p className="text-white/50 text-sm">Configure the heart and protection of your timepiece.</p>
+        </div>
+
+        <div className="space-y-6">
+          <div className="space-y-3">
+            <p className="text-[10px] uppercase tracking-widest text-white/40">Movement Engine</p>
+            <div className="grid grid-cols-3 gap-3">
+              {(['quartz', 'mechanical', 'automatic'] as MovementType[]).map((m) => (
+                <button
+                  key={m} onClick={() => setMovement(m)}
+                  className={cn(
+                    "aspect-square rounded-xl border-2 transition-all duration-300 bg-cover bg-center",
+                    structuralOptions.movement === m ? "border-[#C5A059] shadow-[0_0_15px_rgba(197,160,89,0.4)]" : "border-white/10 opacity-60 hover:opacity-100 hover:border-white/30"
+                  )}
+                  style={{ backgroundImage: `url(/images/movement_${m}.png)` }}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-3 pt-4 border-t border-white/10">
+            <p className="text-[10px] uppercase tracking-widest text-white/40">Hands Style</p>
+            <div className="flex space-x-2">
+              {(['baton', 'mercedes', 'sword'] as HandsType[]).map((h) => (
+                <button
+                  key={h} onClick={() => setHands(h)}
+                  className={cn("flex-1 py-3 rounded-lg border text-xs font-medium capitalize transition-all", structuralOptions.hands === h ? "bg-white text-black border-white" : "bg-transparent text-white/60 border-white/10 hover:border-white/30")}
+                >
+                  {h}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-3 pt-4 border-t border-white/10">
+            <p className="text-[10px] uppercase tracking-widest text-white/40">Glass Crystal</p>
+            <div className="grid grid-cols-3 gap-3">
+              {(['mineral', 'domed', 'sapphire'] as GlassType[]).map((g) => (
+                <button
+                  key={g} onClick={() => setGlass(g)}
+                  className={cn(
+                    "aspect-square rounded-xl border-2 transition-all duration-300 bg-cover bg-center",
+                    structuralOptions.glass === g ? "border-[#C5A059] shadow-[0_0_15px_rgba(197,160,89,0.4)]" : "border-white/10 opacity-60 hover:opacity-100 hover:border-white/30"
+                  )}
+                  style={{ backgroundImage: `url(/images/glass_${g}.png)` }}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-3 pt-4 border-t border-white/10">
+            <p className="text-[10px] uppercase tracking-widest text-white/40">Case Back</p>
+            <div className="grid grid-cols-2 gap-3">
+              {(['solid', 'exhibition'] as CaseBackType[]).map((c) => (
+                <button
+                  key={c} onClick={() => setCaseBack(c)}
+                  className={cn(
+                    "aspect-video rounded-xl border-2 transition-all duration-300 bg-cover bg-center relative flex justify-center items-end pb-2",
+                    structuralOptions.caseBack === c ? "border-[#C5A059] shadow-[0_0_15px_rgba(197,160,89,0.4)]" : "border-white/10 opacity-60 hover:opacity-100 hover:border-white/30"
+                  )}
+                  style={{ backgroundImage: `url(/images/caseback_${c}.png)` }}
+                >
+                  <span className="bg-black/80 backdrop-blur-sm text-white text-[10px] uppercase tracking-widest px-3 py-1 rounded-full font-medium">
+                    {c}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+
+  const Step4 = () => (
+    <section className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
+      <div className="space-y-6">
+        <div>
+          <p className="text-xs uppercase tracking-widest text-[#C5A059] mb-4 font-semibold">4. Hardware</p>
+          <h3 className="text-2xl font-light text-white mb-2">Lugs & Buckle</h3>
+          <p className="text-white/50 text-sm">Refine the connecting hardware components.</p>
+        </div>
+
+        <div className="space-y-6">
+          <div className="space-y-3">
+            <p className="text-[10px] uppercase tracking-widest text-white/40">Buckle Style</p>
+            <div className="grid grid-cols-3 gap-3">
+              {(['standard', 'deployment', 'butterfly'] as BuckleType[]).map((b) => (
+                <button
+                  key={b} onClick={() => setBuckle(b)}
+                  className={cn(
+                    "aspect-square rounded-xl border-2 transition-all duration-300 bg-cover bg-center",
+                    structuralOptions.buckle === b ? "border-[#C5A059] shadow-[0_0_15px_rgba(197,160,89,0.4)]" : "border-white/10 opacity-60 hover:opacity-100 hover:border-white/30"
+                  )}
+                  style={{ backgroundImage: `url(/images/buckle_${b}.png)` }}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-3 pt-4 border-t border-white/10">
+            <p className="text-[10px] uppercase tracking-widest text-white/40">Lugs Style</p>
+            <div className="grid grid-cols-3 gap-3">
+              {(['standard', 'curved', 'wire'] as LugsType[]).map((l) => (
+                <button
+                  key={l} onClick={() => setLugs(l)}
+                  className={cn(
+                    "aspect-square rounded-xl border-2 transition-all duration-300 bg-cover bg-center",
+                    structuralOptions.lugs === l ? "border-[#C5A059] shadow-[0_0_15px_rgba(197,160,89,0.4)]" : "border-white/10 opacity-60 hover:opacity-100 hover:border-white/30"
+                  )}
+                  style={{ backgroundImage: `url(/images/lugs_${l}.png)` }}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+
+  const Step5 = () => (
+    <section className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
+      <div className="space-y-6">
+        <div>
+          <p className="text-xs uppercase tracking-widest text-[#C5A059] mb-4 font-semibold">5. Personal Touch</p>
+          <h3 className="text-2xl font-light text-white mb-2">Bespoke Engraving</h3>
+          <p className="text-white/50 text-sm">Add custom photos or laser-engraved text.</p>
+        </div>
+
+        <div className="space-y-6">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2 text-white/70">
+                <LucideImage size={18} />
+                <h4 className="uppercase tracking-widest text-xs font-semibold">Custom Photo (+ PKR 1,000)</h4>
+              </div>
+              {uploadedImage && (
+                <button
+                  onClick={() => { setUploadedImage(null); if (fileInputRef.current) fileInputRef.current.value = '' }}
+                  className="text-[10px] text-red-400 hover:text-red-300 uppercase tracking-widest"
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              ref={fileInputRef}
+              onChange={handleImageUpload}
+            />
+
+            {uploadedImage ? (
+              <div className="w-full aspect-video rounded-xl border border-white/20 bg-black overflow-hidden relative">
+                <img src={uploadedImage} alt="Custom Dial" className="w-full h-full object-cover opacity-80" />
+                <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                  <CheckCircle2 className="text-[#25D366] w-12 h-12" />
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full py-8 border border-dashed border-white/20 rounded-xl text-white/50 hover:text-white hover:border-[#C5A059] transition-all duration-300 bg-white/5 flex flex-col items-center gap-3"
+              >
+                <LucideImage size={24} className="opacity-50" />
+                <span className="text-xs font-medium uppercase tracking-widest">Upload Custom Artwork</span>
+              </button>
+            )}
+          </div>
+
+          <div className="space-y-4 pt-6 border-t border-white/10">
+            <div className="flex items-center space-x-2 text-white/70 mb-2">
+              <Type size={18} />
+              <h4 className="uppercase tracking-widest text-xs font-semibold">Engraving (+ PKR 1,500)</h4>
+            </div>
+
+            <input
+              type="text"
+              placeholder="e.g. UMAIR'S LEGACY"
+              maxLength={20}
+              value={engraving.text}
+              onChange={(e) => setEngravingText(e.target.value)}
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-4 text-sm focus:outline-none focus:border-[#C5A059] transition-colors shadow-inner text-white placeholder-white/30 font-medium"
+            />
+
+            {engraving.text && (
+              <div className="flex space-x-2 pt-2">
+                {(['minimal', 'cursive', 'serif'] as EngravingFont[]).map((font) => (
+                  <button
+                    key={font}
+                    onClick={() => setEngravingFont(font)}
+                    className={cn(
+                      "flex-1 py-3 rounded-lg text-xs font-medium capitalize transition-colors border",
+                      engraving.font === font ? "bg-white text-black border-white" : "text-white/40 border-white/10 hover:bg-white/5 hover:text-white/70"
+                    )}
+                  >
+                    {font}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+
+  const Step6 = () => (
+    <section className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
+      <div className="space-y-6">
+        <div>
+          <p className="text-xs uppercase tracking-widest text-[#C5A059] mb-4 font-semibold">6. Final Review</p>
+          <h3 className="text-2xl font-light text-white mb-2">Your Bespoke Timepiece</h3>
+          <p className="text-white/50 text-sm">Review your configuration before locking in your order.</p>
+        </div>
+
+        <div className="bg-white/5 rounded-2xl p-6 border border-white/10 space-y-4">
+          <div className="flex justify-between items-center pb-4 border-b border-white/10 text-sm">
+            <span className="text-white/60">Base Watch</span>
+            <span className="font-semibold text-white capitalize">{baseModel} Strap / {caseShape} Case</span>
+          </div>
+          <div className="flex justify-between items-center pb-4 border-b border-white/10 text-sm">
+            <span className="text-white/60">Internal Mechanics</span>
+            <span className="font-semibold text-white capitalize">{structuralOptions.movement}</span>
+          </div>
+          <div className="flex justify-between items-center pb-4 border-b border-white/10 text-sm">
+            <span className="text-white/60">Glass & Protection</span>
+            <span className="font-semibold text-white capitalize">{structuralOptions.glass}</span>
+          </div>
+          {(uploadedImage || engraving.text) && (
+            <div className="flex justify-between items-center pb-4 border-b border-white/10 text-sm text-[#C5A059]">
+              <span>Personalization Added</span>
+              <span className="font-semibold">Yes</span>
+            </div>
+          )}
+
+          <div className="pt-2 flex justify-between items-end">
+            <span className="text-xs uppercase tracking-widest text-white/50">Estimated Total</span>
+            <span className="text-3xl font-light text-white">PKR {totalPrice.toLocaleString()}</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+
+  return (
+    <div className="w-full flex flex-col h-[600px] lg:h-[800px] bg-[#0a0a0a] border border-white/10 rounded-3xl overflow-hidden shadow-2xl relative">
+
+      {/* Progress Header */}
+      <div className="w-full px-8 py-6 border-b border-white/10 bg-black/40 backdrop-blur-md shrink-0">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm font-semibold tracking-widest uppercase text-white/80">Configure</h2>
+          <span className="text-xs text-white/40 font-mono">STEP {step} OF {TOTAL_STEPS}</span>
+        </div>
+        <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-[#C5A059] transition-all duration-500 ease-out"
+            style={{ width: `${(step / TOTAL_STEPS) * 100}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Dynamic Step Content */}
+      <div className="flex-1 overflow-y-auto px-8 py-8 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+        {step === 1 && <Step1 />}
+        {step === 2 && <Step2 />}
+        {step === 3 && <Step3 />}
+        {step === 4 && <Step4 />}
+        {step === 5 && <Step5 />}
+        {step === 6 && <Step6 />}
+      </div>
+
+      {/* Footer Navigation */}
+      <div className="w-full p-6 border-t border-white/10 bg-black/60 backdrop-blur-xl shrink-0 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          {step > 1 && (
+            <button
+              onClick={prevStep}
+              className="p-3 rounded-full bg-white/5 hover:bg-white/10 text-white/70 transition-colors border border-white/10"
+            >
+              <ChevronLeft size={20} />
+            </button>
+          )}
+          <div className="flex flex-col hidden sm:flex">
+            <span className="text-[10px] uppercase tracking-widest text-white/40">Running Total</span>
+            <span className="font-medium text-[#C5A059]">PKR {totalPrice.toLocaleString()}</span>
+          </div>
+        </div>
+
+        {step < TOTAL_STEPS ? (
+          <button
+            onClick={nextStep}
+            className="flex items-center gap-2 bg-white text-black px-6 py-3 rounded-full font-bold uppercase tracking-widest text-xs hover:scale-105 hover:shadow-[0_0_20px_rgba(255,255,255,0.2)] transition-all"
+          >
+            Next Step <ChevronRight size={16} />
+          </button>
+        ) : (
+          <button
+            onClick={handleOrder}
+            className="flex items-center gap-2 bg-[#C5A059] text-black px-8 py-3 rounded-full font-bold uppercase tracking-widest text-xs hover:scale-105 hover:shadow-[0_0_20px_rgba(197,160,89,0.4)] transition-all"
+          >
+            Checkout
+          </button>
+        )}
+      </div>
+
+    </div>
+  );
+};
+
+export default ConfiguratorPanel;
