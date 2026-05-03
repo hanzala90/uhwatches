@@ -24,10 +24,11 @@ const ConfiguratorPanel = () => {
   const {
     baseModel, setBaseModel, caseShape, setCaseShape,
     engraving, setEngravingText, setEngravingFont,
-    designOptions, setDialURL,
+    designOptions, setDialURL, setStrapColor,
     structuralOptions, setMovement, setCaseBack, setGlass, setBuckle, setHands, setLugs,
     totalPrice, setUploadedImage, uploadedImage
   } = useWatchStore();
+
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
