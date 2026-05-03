@@ -104,40 +104,11 @@ const ConfiguratorPanel = () => {
             ))}
           </div>
 
-          {/* Leather color sub-selection */}
-          {baseModel === 'leather' && (
-            <div className="pt-3 border-t border-white/5 space-y-3">
-              <p className="text-[10px] uppercase tracking-widest text-white/40">Leather Color</p>
-              <div className="grid grid-cols-3 gap-2">
-                {([
-                  { color: 'Black', img: '/images/strap_black.png' },
-                  { color: 'Brown', img: '/images/strap_brown.png' },
-                  { color: 'Dark Brown', img: '/images/strap_darkbrown.png' },
-                ]).map((variant) => (
-                  <button
-                    key={variant.color}
-                    onClick={() => setStrapColor(variant.color.toLowerCase())}
-                    className={cn(
-                      "rounded-xl overflow-hidden border-2 transition-all duration-300 aspect-video relative",
-                      designOptions.strapColor === variant.color.toLowerCase() ? "border-[#C5A059] shadow-[0_0_10px_rgba(197,160,89,0.3)]" : "border-white/10 opacity-70 hover:opacity-100 hover:border-white/30"
-                    )}
-                  >
-                    <img src={variant.img} alt={variant.color} className="w-full h-full object-cover" />
-                    <div className="absolute inset-x-0 bottom-0 bg-black/70 py-1 text-[9px] text-white text-center uppercase tracking-widest">
-                      {variant.color}
-                    </div>
-                    {designOptions.strapColor === variant.color.toLowerCase() && (
-                      <div className="absolute top-1 right-1"><CheckCircle2 size={12} className="text-[#C5A059]" /></div>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </section>
   );
+
 
 
   const Step2 = () => (
