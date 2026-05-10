@@ -334,10 +334,11 @@ const WatchPreviewSVG: React.FC = () => {
                 </radialGradient>
               </defs>
 
-              {/* Layer 1 — base watch photo (round only, no blend mode) */}
+              {/* Layer 1 — base watch photo (round only); multiply removes white bg */}
               {!isSquareCase && (
                 <image href={baseImgSrc} x={0} y={50} width={500} height={500}
-                  preserveAspectRatio="xMidYMid meet" />
+                  preserveAspectRatio="xMidYMid meet"
+                  style={{ mixBlendMode:'multiply' } as React.CSSProperties}/>
               )}
 
               {/* Layer 1b — square case drawn in pure SVG (no white bg image) */}
