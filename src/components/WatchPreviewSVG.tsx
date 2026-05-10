@@ -268,6 +268,7 @@ const CaseBackView: React.FC<{
 
 const WatchPreviewSVG: React.FC = () => {
   const { baseModel, caseShape, designOptions, structuralOptions, engraving, uploadedImage } = useWatchStore();
+  const caseColor = (designOptions as any).caseColor || 'silver';
 
   const [isFlipped, setIsFlipped] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -345,32 +346,88 @@ const WatchPreviewSVG: React.FC = () => {
                 </radialGradient>
               </defs>
 
-              {/* Layer 1 — base watch photo */}
-              <image href={baseImgSrc} x={0} y={50} width={500} height={500}
-                preserveAspectRatio="xMidYMid meet"
-                style={{ mixBlendMode:'multiply' } as React.CSSProperties}/>
-
-              {/* Layer 2 — square case shell */}
-              {isSquareCase && (
-                <>
-                  <rect x={cx-sqW/2-20} y={cy-sqH/2-20} width={sqW+40} height={sqH+40} rx={sqRx+10}
-                    fill="url(#bezel-grad)" style={{ filter:'drop-shadow(0 6px 18px rgba(0,0,0,0.5))' }}/>
-                  <rect x={224} y={40} width={52} height={cy-sqH/2-20} rx={8} fill="#111"/>
-                  <rect x={224} y={cy+sqH/2+20} width={52} height={600-(cy+sqH/2+20)} rx={8} fill="#111"/>
-                </>
+              {/* Layer 1 — base watch photo (round only, no blend mode) */}
+              {!isSquareCase && (
+                <image href={baseImgSrc} x={0} y={50} width={500} height={500}
+                  preserveAspectRatio="xMidYMid meet" />
               )}
 
-              {/* Layer 3 — dial image */}
+              {/* Layer 1b — square case drawn in pure SVG (no white bg image) */}
+              {isSquareCase && (() => {
+                const metalColors: Record<string, [string,string,string]> = {
+                  silver:    ['#d8d8d8','#a0a0a0','#606060'],
+                  gold:      ['#e8c96a','#C5A059','#7a5c1e'],
+                  black:     ['#555','#2a2a2a','#111'],
+                  'rose-gold':['#e8a090','#c07060','#8a3828'],
+                };
+                const [c1,c2,c3] = metalColors[caseColor] ?? metalColors.silver;
+                const lugW = 38, lugH = 28, lugRx = 7;
+                // strap
+                const strapColor = baseModel === 'metal' ? c2 : baseModel === 'sports' ? '#333' : '#222';
+                return (
+                  <g>
+                    {/* Top strap */}
+                    <rect x={cx-14} y={40} width={28} height={cy-sqH/2-22} rx={6} fill={strapColor} />
+                    <rect x={cx-10} y={40} width={3} height={cy-sqH/2-22} rx={2} fill="rgba(255,255,255,0.08)" />
+                    {/* Bottom strap */}
+                    <rect x={cx-14} y={cy+sqH/2+22} width={28} height={560-(cy+sqH/2+22)} rx={6} fill={strapColor} />
+                    {/* Outer bezel */}
+                    <defs>
+                      <linearGradient id="sq-bezel" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor={c1}/>
+                        <stop offset="50%" stopColor={c2}/>
+                        <stop offset="100%" stopColor={c3}/>
+                      </linearGradient>
+                    </defs>
+                    <rect x={cx-sqW/2-22} y={cy-sqH/2-22} width={sqW+44} height={sqH+44} rx={sqRx+10}
+                      fill={`url(#sq-bezel)`}
+                      style={{filter:'drop-shadow(0 8px 24px rgba(0,0,0,0.6))'}} />
+                    {/* Top lug left */}
+                    <rect x={cx-sqW/2-6} y={cy-sqH/2-22-lugH} width={lugW} height={lugH+4} rx={lugRx} fill={`url(#sq-bezel)`}/>
+                    {/* Top lug right */}
+                    <rect x={cx+sqW/2+6-lugW} y={cy-sqH/2-22-lugH} width={lugW} height={lugH+4} rx={lugRx} fill={`url(#sq-bezel)`}/>
+                    {/* Bottom lug left */}
+                    <rect x={cx-sqW/2-6} y={cy+sqH/2+18} width={lugW} height={lugH+4} rx={lugRx} fill={`url(#sq-bezel)`}/>
+                    {/* Bottom lug right */}
+                    <rect x={cx+sqW/2+6-lugW} y={cy+sqH/2+18} width={lugW} height={lugH+4} rx={lugRx} fill={`url(#sq-bezel)`}/>
+                    {/* Inner bezel step */}
+                    <rect x={cx-sqW/2-8} y={cy-sqH/2-8} width={sqW+16} height={sqH+16} rx={sqRx+2}
+                      fill="none" stroke={c3} strokeWidth={3}/>
+                    {/* Crown */}
+                    <rect x={cx+sqW/2+22} y={cy-10} width={14} height={20} rx={5} fill={c2}/>
+                    <rect x={cx+sqW/2+24} y={cy-7} width={10} height={14} rx={3} fill={c1}/>
+                  </g>
+                );
+              })()}
+
+
+
+              {/* Layer 3 — dial */}
               <g clipPath={`url(#${dialClipId})`}>
-                <image key={dialKey}
-                  href={designOptions.dialURL || '/images/dial_white.png'}
-                  x={isSquareCase ? cx-sqW/2-30 : cx-r}
-                  y={isSquareCase ? cy-sqH/2-30 : cy-r}
-                  width={isSquareCase  ? sqW+60 : r*2}
-                  height={isSquareCase ? sqH+60 : r*2}
-                  preserveAspectRatio="xMidYMid slice"
-                  onLoad={() => setDialLoaded(true)}
-                  style={{ opacity: dialLoaded ? 1 : 0, transition:'opacity 0.4s ease' } as React.CSSProperties}/>
+                {isSquareCase ? (
+                  // Square dial drawn in SVG — proper square shape
+                  <g>
+                    <rect x={cx-sqW/2} y={cy-sqH/2} width={sqW} height={sqH} rx={sqRx}
+                      fill="#111" />
+                    {/* Dial texture from image, clipped */}
+                    <image key={dialKey}
+                      href={designOptions.dialURL || '/images/dial_black.png'}
+                      x={cx-sqW/2} y={cy-sqH/2} width={sqW} height={sqH}
+                      preserveAspectRatio="xMidYMid slice"
+                      onLoad={() => setDialLoaded(true)}
+                      style={{ opacity: dialLoaded ? 1 : 0, transition:'opacity 0.4s ease' } as React.CSSProperties}/>
+                    {/* Square inner chapter ring */}
+                    <rect x={cx-sqW/2+8} y={cy-sqH/2+8} width={sqW-16} height={sqH-16} rx={sqRx-4}
+                      fill="none" stroke="rgba(197,160,89,0.3)" strokeWidth={1}/>
+                  </g>
+                ) : (
+                  <image key={dialKey}
+                    href={designOptions.dialURL || '/images/dial_black.png'}
+                    x={cx-r} y={cy-r} width={r*2} height={r*2}
+                    preserveAspectRatio="xMidYMid slice"
+                    onLoad={() => setDialLoaded(true)}
+                    style={{ opacity: dialLoaded ? 1 : 0, transition:'opacity 0.4s ease' } as React.CSSProperties}/>
+                )}
               </g>
 
               {/* Layer 4 — uploaded custom image */}
@@ -388,11 +445,10 @@ const WatchPreviewSVG: React.FC = () => {
                 <IndicesRing cx={cx} cy={cy} indexR={indexR} dialURL={designOptions.dialURL}/>
               </g>
 
-              {/* Layer 6 — inner bezel ring */}
-              {isSquareCase
-                ? <rect x={cx-sqW/2} y={cy-sqH/2} width={sqW} height={sqH} rx={sqRx}
-                    fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth={2}/>
-                : <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth={2}/>}
+              {/* Layer 6 — inner bezel ring (round only — square already has it) */}
+              {!isSquareCase && (
+                <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth={1.5}/>
+              )}
 
               {/* Layer 7 — hands */}
               <g filter="url(#hand-shadow)">
