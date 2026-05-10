@@ -488,17 +488,7 @@ const WatchPreviewSVG: React.FC = () => {
                 </text>
               )}
 
-              {/* Loading shimmer */}
-              {!dialLoaded && (
-                <g clipPath={`url(#${dialClipId})`}>
-                  {isSquareCase
-                    ? <rect x={cx-sqW/2} y={cy-sqH/2} width={sqW} height={sqH} rx={sqRx} fill="#1a1a1a"/>
-                    : <circle cx={cx} cy={cy} r={r} fill="#1a1a1a"/>}
-                  <text x={cx} y={cy+4} textAnchor="middle" fill="rgba(255,255,255,0.2)" fontSize={11} fontFamily="monospace">
-                    loading…
-                  </text>
-                </g>
-              )}
+
             </svg>
           )}
         </div>
