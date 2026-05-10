@@ -2,10 +2,10 @@
 
 import React, { useState, useRef } from 'react';
 import {
-  useWatchStore, WatchModel, EngravingFont,
-  MovementType, CaseBackType, GlassType, BuckleType, HandsType, LugsType
+  useWatchStore, WatchModel, EngravingFont, CaseColor,
+  MovementTier, MovementType, CaseBackType, BuckleType, HandsType
 } from '@/store/useWatchStore';
-import { Settings2, Type, Image as LucideImage, Palette, Watch, Cog, Wrench, ChevronRight, ChevronLeft, CheckCircle2 } from 'lucide-react';
+import { Type, Image as LucideImage, ChevronRight, ChevronLeft, CheckCircle2, Zap, Star } from 'lucide-react';
 import clsx from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { useRouter } from 'next/navigation';
@@ -24,8 +24,8 @@ const ConfiguratorPanel = () => {
   const {
     baseModel, setBaseModel, caseShape, setCaseShape,
     engraving, setEngravingText, setEngravingFont,
-    designOptions, setDialURL, setStrapColor,
-    structuralOptions, setMovement, setCaseBack, setGlass, setBuckle, setHands, setLugs,
+    designOptions, setDialURL, setCaseColor,
+    structuralOptions, setMovementTier, setMovement, setCustomHands, setCaseBack, setBuckle, setHands,
     totalPrice, setUploadedImage, uploadedImage
   } = useWatchStore();
 
@@ -53,14 +53,14 @@ const ConfiguratorPanel = () => {
       <div className="space-y-6">
         <div>
           <p className="text-xs uppercase tracking-widest text-[#C5A059] mb-4 font-semibold">1. Foundation</p>
-          <h3 className="text-2xl font-light text-white mb-2">Case & Base Model</h3>
-          <p className="text-white/50 text-sm">Select the structural foundation for your timepiece.</p>
+          <h3 className="text-2xl font-light text-white mb-2">Type</h3>
+          <p className="text-white/50 text-sm">Build your custom timepiece.</p>
         </div>
 
         <div className="space-y-4">
           <p className="text-[10px] uppercase tracking-widest text-white/40">Case Shape</p>
           <div className="grid grid-cols-2 gap-3">
-            {(['round', 'square', 'skeleton', 'octagonal', 'octagonal-round'] as typeof caseShape[]).map((shape) => (
+            {(['round', 'square', 'octagonal', 'octagonal-round'] as const).map((shape) => (
               <button
                 key={shape}
                 onClick={() => setCaseShape(shape)}
@@ -78,7 +78,7 @@ const ConfiguratorPanel = () => {
         <div className="space-y-4 pt-4 border-t border-white/10">
           <p className="text-[10px] uppercase tracking-widest text-white/40">Strap Type</p>
           <div className="grid grid-cols-1 gap-3">
-            {([
+            {([  
               { id: 'leather', label: 'Leather Strap', desc: 'Genuine leather, hand-stitched', img: '/images/strap_black.png', price: 10000 },
               { id: 'metal', label: 'Metal Bracelet', desc: 'Stainless steel link bracelet', img: '/images/watch_metal.png', price: 15000 },
               { id: 'sports', label: 'Sports Rubber Band', desc: 'Premium silicone sport strap', img: '/images/watch_sports.png', price: 12000 },
@@ -91,7 +91,7 @@ const ConfiguratorPanel = () => {
                   baseModel === model.id ? "bg-white/10 border-[#C5A059] shadow-[0_0_15px_rgba(197,160,89,0.2)]" : "bg-white/5 text-white/60 border-white/10 hover:border-white/30 hover:bg-white/10"
                 )}
               >
-                <div className="w-16 h-10 rounded-lg overflow-hidden border border-white/10 shrink-0 bg-gray-200">
+                <div className="w-16 h-10 rounded-lg overflow-hidden border border-white/10 shrink-0 bg-gray-900">
                   <img src={model.img} alt={model.label} className="w-full h-full object-cover" />
                 </div>
                 <div className="text-left flex-1">
@@ -103,11 +103,38 @@ const ConfiguratorPanel = () => {
               </button>
             ))}
           </div>
-
         </div>
+
+        {/* Case Color */}
+        <div className="space-y-4 pt-4 border-t border-white/10">
+          <p className="text-[10px] uppercase tracking-widest text-white/40">Case Color</p>
+          <div className="grid grid-cols-4 gap-3">
+            {([
+              { id: 'silver', label: 'Silver', color: '#C0C0C0' },
+              { id: 'gold', label: 'Gold', color: '#C5A059' },
+              { id: 'black', label: 'Black', color: '#1a1a1a' },
+              { id: 'rose-gold', label: 'Rose Gold', color: '#B76E79' },
+            ] as { id: CaseColor; label: string; color: string }[]).map((c) => (
+              <button
+                key={c.id}
+                onClick={() => setCaseColor(c.id)}
+                title={c.label}
+                className={cn(
+                  "flex flex-col items-center gap-2 py-3 rounded-xl border-2 transition-all duration-300",
+                  designOptions.caseColor === c.id ? "border-[#C5A059] bg-white/10" : "border-white/10 hover:border-white/30"
+                )}
+              >
+                <div className="w-8 h-8 rounded-full border border-white/20 shadow-lg" style={{ background: c.color }} />
+                <span className="text-[9px] uppercase tracking-widest text-white/60">{c.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
       </div>
     </section>
   );
+
 
 
 
@@ -124,8 +151,6 @@ const ConfiguratorPanel = () => {
           {[
             { id: 'black', url: '/images/dial_black.png', label: 'Black Roman', sublabel: 'Gold indices' },
             { id: 'silver', url: '/images/dial_silver.png', label: 'Silver Sport', sublabel: 'Brushed sunburst' },
-            { id: 'skeleton', url: '/images/dial_skeleton.png', label: 'Skeleton Gold', sublabel: 'Open-worked' },
-            { id: 'white', url: '/images/dial_white.png', label: 'Classic White', sublabel: 'Minimal' },
           ].map(dial => (
             <button
               key={dial.id}
@@ -154,78 +179,107 @@ const ConfiguratorPanel = () => {
     <section className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
       <div className="space-y-6">
         <div>
-          <p className="text-xs uppercase tracking-widest text-[#C5A059] mb-4 font-semibold">3. Internal Mechanics</p>
-          <h3 className="text-2xl font-light text-white mb-2">Movements & Glass</h3>
-          <p className="text-white/50 text-sm">Configure the heart and protection of your timepiece.</p>
+          <p className="text-xs uppercase tracking-widest text-[#C5A059] mb-4 font-semibold">3. Movement</p>
+          <h3 className="text-2xl font-light text-white mb-2">The Heart</h3>
+          <p className="text-white/50 text-sm">Select your movement and hands preference.</p>
         </div>
 
-        <div className="space-y-6">
-          <div className="space-y-3">
-            <p className="text-[10px] uppercase tracking-widest text-white/40">Movement Engine</p>
-            <div className="grid grid-cols-3 gap-3">
-              {(['quartz', 'mechanical', 'automatic'] as MovementType[]).map((m) => (
-                <button
-                  key={m} onClick={() => setMovement(m)}
-                  className={cn(
-                    "aspect-square rounded-xl border-2 transition-all duration-300 bg-cover bg-center",
-                    structuralOptions.movement === m ? "border-[#C5A059] shadow-[0_0_15px_rgba(197,160,89,0.4)]" : "border-white/10 opacity-60 hover:opacity-100 hover:border-white/30"
-                  )}
-                  style={{ backgroundImage: `url(/images/movement_${m}.png)` }}
-                />
-              ))}
-            </div>
+        {/* Tier selection */}
+        <div className="space-y-3">
+          <p className="text-[10px] uppercase tracking-widest text-white/40">Movement Tier</p>
+          <div className="grid grid-cols-2 gap-3">
+            {([
+              { id: 'basic' as MovementTier, label: 'Basic', sublabel: 'Quartz — Reliable & accurate', icon: <Zap size={20} />, price: 'Included' },
+              { id: 'premium' as MovementTier, label: 'Premium', sublabel: 'Mechanical / Automatic', icon: <Star size={20} />, price: '+ PKR 3,000+' },
+            ]).map(tier => (
+              <button
+                key={tier.id}
+                onClick={() => setMovementTier(tier.id)}
+                className={cn(
+                  "flex flex-col items-start gap-3 p-4 rounded-2xl border-2 transition-all duration-300 text-left",
+                  structuralOptions.movementTier === tier.id
+                    ? "border-[#C5A059] bg-[#C5A059]/10 shadow-[0_0_20px_rgba(197,160,89,0.2)]"
+                    : "border-white/10 bg-white/5 hover:border-white/30"
+                )}
+              >
+                <span className={structuralOptions.movementTier === tier.id ? 'text-[#C5A059]' : 'text-white/50'}>{tier.icon}</span>
+                <div>
+                  <p className="text-white font-semibold text-sm">{tier.label}</p>
+                  <p className="text-white/50 text-xs mt-0.5">{tier.sublabel}</p>
+                  <p className="text-[#C5A059] text-[10px] mt-1 font-medium">{tier.price}</p>
+                </div>
+              </button>
+            ))}
           </div>
+        </div>
 
+        {/* Premium sub-options */}
+        {structuralOptions.movementTier === 'premium' && (
           <div className="space-y-3 pt-4 border-t border-white/10">
-            <p className="text-[10px] uppercase tracking-widest text-white/40">Hands Style</p>
-            <div className="flex space-x-2">
-              {(['baton', 'mercedes', 'sword'] as HandsType[]).map((h) => (
-                <button
-                  key={h} onClick={() => setHands(h)}
-                  className={cn("flex-1 py-3 rounded-lg border text-xs font-medium capitalize transition-all", structuralOptions.hands === h ? "bg-white text-black border-white" : "bg-transparent text-white/60 border-white/10 hover:border-white/30")}
-                >
-                  {h}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-3 pt-4 border-t border-white/10">
-            <p className="text-[10px] uppercase tracking-widest text-white/40">Glass Crystal</p>
-            <div className="grid grid-cols-3 gap-3">
-              {(['mineral', 'domed', 'sapphire'] as GlassType[]).map((g) => (
-                <button
-                  key={g} onClick={() => setGlass(g)}
-                  className={cn(
-                    "aspect-square rounded-xl border-2 transition-all duration-300 bg-cover bg-center",
-                    structuralOptions.glass === g ? "border-[#C5A059] shadow-[0_0_15px_rgba(197,160,89,0.4)]" : "border-white/10 opacity-60 hover:opacity-100 hover:border-white/30"
-                  )}
-                  style={{ backgroundImage: `url(/images/glass_${g}.png)` }}
-                />
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-3 pt-4 border-t border-white/10">
-            <p className="text-[10px] uppercase tracking-widest text-white/40">Case Back</p>
+            <p className="text-[10px] uppercase tracking-widest text-white/40">Select Movement</p>
             <div className="grid grid-cols-2 gap-3">
-              {(['solid', 'exhibition'] as CaseBackType[]).map((c) => (
+              {([
+                { id: 'mechanical' as MovementType, label: 'Mechanical', price: '+ PKR 3,000' },
+                { id: 'automatic' as MovementType, label: 'Automatic', price: '+ PKR 6,000' },
+              ]).map(m => (
                 <button
-                  key={c} onClick={() => setCaseBack(c)}
+                  key={m.id}
+                  onClick={() => setMovement(m.id)}
                   className={cn(
-                    "aspect-video rounded-xl border-2 transition-all duration-300 bg-cover bg-center relative flex justify-center items-end pb-2",
-                    structuralOptions.caseBack === c ? "border-[#C5A059] shadow-[0_0_15px_rgba(197,160,89,0.4)]" : "border-white/10 opacity-60 hover:opacity-100 hover:border-white/30"
+                    "flex flex-col items-center gap-1 py-4 rounded-xl border-2 transition-all duration-300 bg-cover bg-center relative",
+                    structuralOptions.movement === m.id ? "border-[#C5A059] shadow-[0_0_15px_rgba(197,160,89,0.3)]" : "border-white/10 opacity-60 hover:opacity-100 hover:border-white/30"
                   )}
-                  style={{ backgroundImage: `url(/images/caseback_${c}.png)` }}
+                  style={{ backgroundImage: `url(/images/movement_${m.id}.png)`, minHeight: '90px' }}
                 >
-                  <span className="bg-black/80 backdrop-blur-sm text-white text-[10px] uppercase tracking-widest px-3 py-1 rounded-full font-medium">
-                    {c}
-                  </span>
+                  <div className="absolute inset-0 bg-black/60 rounded-xl" />
+                  <span className="relative text-white font-semibold text-sm">{m.label}</span>
+                  <span className="relative text-[#C5A059] text-[10px]">{m.price}</span>
                 </button>
               ))}
             </div>
           </div>
+        )}
+
+        {/* Custom Hands toggle */}
+        <div className="space-y-3 pt-4 border-t border-white/10">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-white/40">Custom Hands</p>
+              <p className="text-white/50 text-xs mt-0.5">Default hands are included. Upgrade for a signature style.</p>
+            </div>
+            <button
+              onClick={() => setCustomHands(!structuralOptions.customHands)}
+              className={cn(
+                "relative w-12 h-6 rounded-full transition-all duration-300 shrink-0",
+                structuralOptions.customHands ? "bg-[#C5A059]" : "bg-white/20"
+              )}
+            >
+              <span className={cn("absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all duration-300", structuralOptions.customHands ? "left-7" : "left-1")} />
+            </button>
+          </div>
+
+          {structuralOptions.customHands && (
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              {([
+                { id: 'baton' as HandsType, label: 'Baton', sublabel: 'Sleek & minimal' },
+                { id: 'sword' as HandsType, label: 'Sword', sublabel: 'Bold & tapered — +PKR 800' },
+              ]).map(h => (
+                <button
+                  key={h.id}
+                  onClick={() => setHands(h.id)}
+                  className={cn(
+                    "flex flex-col items-start gap-1 p-3 rounded-xl border-2 transition-all duration-300",
+                    structuralOptions.hands === h.id ? "border-[#C5A059] bg-white/10" : "border-white/10 hover:border-white/30"
+                  )}
+                >
+                  <p className="text-white font-semibold text-sm">{h.label}</p>
+                  <p className="text-white/50 text-[10px]">{h.sublabel}</p>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
+
       </div>
     </section>
   );
@@ -235,8 +289,8 @@ const ConfiguratorPanel = () => {
       <div className="space-y-6">
         <div>
           <p className="text-xs uppercase tracking-widest text-[#C5A059] mb-4 font-semibold">4. Hardware</p>
-          <h3 className="text-2xl font-light text-white mb-2">Lugs & Buckle</h3>
-          <p className="text-white/50 text-sm">Refine the connecting hardware components.</p>
+          <h3 className="text-2xl font-light text-white mb-2">Buckle</h3>
+          <p className="text-white/50 text-sm">Refine the clasp hardware.</p>
         </div>
 
         <div className="space-y-6">
@@ -255,26 +309,11 @@ const ConfiguratorPanel = () => {
               ))}
             </div>
           </div>
-
-          <div className="space-y-3 pt-4 border-t border-white/10">
-            <p className="text-[10px] uppercase tracking-widest text-white/40">Lugs Style</p>
-            <div className="grid grid-cols-3 gap-3">
-              {(['standard', 'curved', 'wire'] as LugsType[]).map((l) => (
-                <button
-                  key={l} onClick={() => setLugs(l)}
-                  className={cn(
-                    "aspect-square rounded-xl border-2 transition-all duration-300 bg-cover bg-center",
-                    structuralOptions.lugs === l ? "border-[#C5A059] shadow-[0_0_15px_rgba(197,160,89,0.4)]" : "border-white/10 opacity-60 hover:opacity-100 hover:border-white/30"
-                  )}
-                  style={{ backgroundImage: `url(/images/lugs_${l}.png)` }}
-                />
-              ))}
-            </div>
-          </div>
         </div>
       </div>
     </section>
   );
+
 
   const Step5 = () => (
     <section className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
@@ -380,12 +419,8 @@ const ConfiguratorPanel = () => {
             <span className="font-semibold text-white capitalize">{baseModel} Strap / {caseShape} Case</span>
           </div>
           <div className="flex justify-between items-center pb-4 border-b border-white/10 text-sm">
-            <span className="text-white/60">Internal Mechanics</span>
-            <span className="font-semibold text-white capitalize">{structuralOptions.movement}</span>
-          </div>
-          <div className="flex justify-between items-center pb-4 border-b border-white/10 text-sm">
-            <span className="text-white/60">Glass & Protection</span>
-            <span className="font-semibold text-white capitalize">{structuralOptions.glass}</span>
+            <span className="text-white/60">Movement</span>
+            <span className="font-semibold text-white capitalize">{structuralOptions.movementTier} — {structuralOptions.movement}</span>
           </div>
           {(uploadedImage || engraving.text) && (
             <div className="flex justify-between items-center pb-4 border-b border-white/10 text-sm text-[#C5A059]">

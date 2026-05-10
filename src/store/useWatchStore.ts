@@ -1,23 +1,23 @@
 import { create } from 'zustand';
 
 export type WatchModel = 'leather' | 'metal' | 'sports';
-export type CaseShape = 'round' | 'square' | 'skeleton' | 'octagonal' | 'octagonal-round';
+export type CaseShape = 'round' | 'square' | 'octagonal' | 'octagonal-round';
+export type CaseColor = 'silver' | 'gold' | 'black' | 'rose-gold';
 export type EngravingFont = 'minimal' | 'cursive' | 'serif';
 
+export type MovementTier = 'basic' | 'premium';
 export type MovementType = 'quartz' | 'mechanical' | 'automatic';
 export type CaseBackType = 'solid' | 'exhibition';
-export type GlassType = 'mineral' | 'domed' | 'sapphire';
 export type BuckleType = 'standard' | 'deployment' | 'butterfly';
-export type HandsType = 'baton' | 'mercedes' | 'sword';
-export type LugsType = 'standard' | 'curved' | 'wire';
+export type HandsType = 'baton' | 'sword';
 
 interface StructuralOptionsState {
+  movementTier: MovementTier;
   movement: MovementType;
   caseBack: CaseBackType;
-  glass: GlassType;
   buckle: BuckleType;
   hands: HandsType;
-  lugs: LugsType;
+  customHands: boolean;
 }
 
 interface EngravingState {
@@ -28,6 +28,7 @@ interface EngravingState {
 interface DesignOptionsState {
   dialURL: string;
   strapColor: string;
+  caseColor: CaseColor;
 }
 
 export interface WatchStoreState {
@@ -40,18 +41,19 @@ export interface WatchStoreState {
   totalPrice: number;
   setBaseModel: (model: WatchModel) => void;
   setCaseShape: (shape: CaseShape) => void;
+  setCaseColor: (color: CaseColor) => void;
   setEngravingText: (text: string) => void;
   setEngravingFont: (font: EngravingFont) => void;
   setDialURL: (url: string) => void;
   setStrapColor: (color: string) => void;
+  setMovementTier: (tier: MovementTier) => void;
   setMovement: (m: MovementType) => void;
+  setCustomHands: (v: boolean) => void;
   setCaseBack: (c: CaseBackType) => void;
-  setGlass: (g: GlassType) => void;
   setBuckle: (b: BuckleType) => void;
   setHands: (h: HandsType) => void;
-  setLugs: (l: LugsType) => void;
   setUploadedImage: (imageUrl: string | null) => void;
-  applyCombination: (model: WatchModel, dialURL: string, movement?: MovementType, glass?: GlassType, hands?: HandsType) => void;
+  applyCombination: (model: WatchModel, dialURL: string, movement?: MovementType, hands?: HandsType) => void;
   resetDesign: () => void;
 }
 
@@ -62,33 +64,29 @@ export const BASE_PRICES: Record<WatchModel, number> = {
 };
 
 const calculatePrice = (
-  model: WatchModel, 
+  model: WatchModel,
   shape: CaseShape,
-  engraving: EngravingState, 
+  engraving: EngravingState,
   structuralOptions: StructuralOptionsState,
   uploadedImage: string | null
 ): number => {
   let price = BASE_PRICES[model];
-  if (shape === 'square') price += 1500; // Square case premium
-  if (shape === 'skeleton') price += 4500; // Skeleton case premium
-  if (shape === 'octagonal') price += 3000; // Octagonal premium
-  if (shape === 'octagonal-round') price += 3500; // Octagonal-round premium
-  if (engraving.text.trim() !== '') {
-    price += 1500; // Engraving fee
-  }
-  if (uploadedImage) {
-    price += 1000; // Photo customization fee
+  if (shape === 'square') price += 1500;
+  if (shape === 'octagonal') price += 3000;
+  if (shape === 'octagonal-round') price += 3500;
+  if (engraving.text.trim() !== '') price += 1500;
+  if (uploadedImage) price += 1000;
+
+  // Movement tier pricing
+  if (structuralOptions.movementTier === 'premium') {
+    if (structuralOptions.movement === 'mechanical') price += 3000;
+    if (structuralOptions.movement === 'automatic') price += 6000;
   }
 
-  if (structuralOptions.movement === 'mechanical') price += 3000;
-  if (structuralOptions.movement === 'automatic') price += 6000;
   if (structuralOptions.caseBack === 'exhibition') price += 1500;
-  if (structuralOptions.glass === 'sapphire') price += 3000;
-  if (structuralOptions.glass === 'domed') price += 1200;
   if (structuralOptions.buckle === 'deployment') price += 1000;
   if (structuralOptions.buckle === 'butterfly') price += 1200;
-  if (structuralOptions.hands === 'mercedes') price += 800;
-  if (structuralOptions.lugs === 'wire') price += 1500;
+  if (structuralOptions.customHands && structuralOptions.hands === 'sword') price += 800;
 
   return price;
 };
@@ -101,16 +99,17 @@ const defaultOptions = {
     font: 'minimal' as EngravingFont
   },
   designOptions: {
-    dialURL: '/images/dial_white.png',
+    dialURL: '/images/dial_black.png',
     strapColor: '#000000',
+    caseColor: 'silver' as CaseColor,
   },
   structuralOptions: {
+    movementTier: 'basic' as MovementTier,
     movement: 'quartz' as MovementType,
     caseBack: 'solid' as CaseBackType,
-    glass: 'mineral' as GlassType,
     buckle: 'standard' as BuckleType,
     hands: 'baton' as HandsType,
-    lugs: 'standard' as LugsType,
+    customHands: false,
   },
   uploadedImage: null,
   totalPrice: BASE_PRICES.leather,
@@ -119,19 +118,22 @@ const defaultOptions = {
 export const useWatchStore = create<WatchStoreState>((set) => ({
   ...defaultOptions,
 
-  setBaseModel: (model) => 
-    set((state) => ({ 
-      baseModel: model, 
-      totalPrice: calculatePrice(model, state.caseShape, state.engraving, state.structuralOptions, state.uploadedImage) 
-    })),
-    
-  setCaseShape: (shape) => 
-    set((state) => ({ 
-      caseShape: shape, 
-      totalPrice: calculatePrice(state.baseModel, shape, state.engraving, state.structuralOptions, state.uploadedImage) 
+  setBaseModel: (model) =>
+    set((state) => ({
+      baseModel: model,
+      totalPrice: calculatePrice(model, state.caseShape, state.engraving, state.structuralOptions, state.uploadedImage)
     })),
 
-  setEngravingText: (text) => 
+  setCaseShape: (shape) =>
+    set((state) => ({
+      caseShape: shape,
+      totalPrice: calculatePrice(state.baseModel, shape, state.engraving, state.structuralOptions, state.uploadedImage)
+    })),
+
+  setCaseColor: (caseColor) =>
+    set((state) => ({ designOptions: { ...state.designOptions, caseColor } })),
+
+  setEngravingText: (text) =>
     set((state) => {
       const newEngraving = { ...state.engraving, text };
       return {
@@ -139,63 +141,63 @@ export const useWatchStore = create<WatchStoreState>((set) => ({
         totalPrice: calculatePrice(state.baseModel, state.caseShape, newEngraving, state.structuralOptions, state.uploadedImage)
       };
     }),
-    
-  setEngravingFont: (font) => 
-    set((state) => ({ engraving: { ...state.engraving, font } })),
-    
-  setDialURL: (url) => 
-    set((state) => ({ designOptions: { ...state.designOptions, dialURL: url } })),
-    
-  setStrapColor: (color) => 
-    set((state) => ({ designOptions: { ...state.designOptions, strapColor: color } })),
-    
-  setUploadedImage: (imageUrl) => 
-    set((state) => ({ 
-      uploadedImage: imageUrl,
-      totalPrice: calculatePrice(state.baseModel, state.caseShape, state.engraving, state.structuralOptions, imageUrl)
-    })),
 
-  setMovement: (movement) => 
+  setEngravingFont: (font) =>
+    set((state) => ({ engraving: { ...state.engraving, font } })),
+
+  setDialURL: (url) =>
+    set((state) => ({ designOptions: { ...state.designOptions, dialURL: url } })),
+
+  setStrapColor: (color) =>
+    set((state) => ({ designOptions: { ...state.designOptions, strapColor: color } })),
+
+  setMovementTier: (movementTier) =>
+    set((state) => {
+      const movement = movementTier === 'basic' ? 'quartz' : state.structuralOptions.movement;
+      const newOpts = { ...state.structuralOptions, movementTier, movement };
+      return { structuralOptions: newOpts, totalPrice: calculatePrice(state.baseModel, state.caseShape, state.engraving, newOpts, state.uploadedImage) };
+    }),
+
+  setMovement: (movement) =>
     set((state) => {
       const newOpts = { ...state.structuralOptions, movement };
       return { structuralOptions: newOpts, totalPrice: calculatePrice(state.baseModel, state.caseShape, state.engraving, newOpts, state.uploadedImage) };
     }),
 
-  setCaseBack: (caseBack) => 
+  setCustomHands: (customHands) =>
+    set((state) => {
+      const newOpts = { ...state.structuralOptions, customHands };
+      return { structuralOptions: newOpts, totalPrice: calculatePrice(state.baseModel, state.caseShape, state.engraving, newOpts, state.uploadedImage) };
+    }),
+
+  setCaseBack: (caseBack) =>
     set((state) => {
       const newOpts = { ...state.structuralOptions, caseBack };
       return { structuralOptions: newOpts, totalPrice: calculatePrice(state.baseModel, state.caseShape, state.engraving, newOpts, state.uploadedImage) };
     }),
 
-  setGlass: (glass) => 
-    set((state) => {
-      const newOpts = { ...state.structuralOptions, glass };
-      return { structuralOptions: newOpts, totalPrice: calculatePrice(state.baseModel, state.caseShape, state.engraving, newOpts, state.uploadedImage) };
-    }),
-
-  setBuckle: (buckle) => 
+  setBuckle: (buckle) =>
     set((state) => {
       const newOpts = { ...state.structuralOptions, buckle };
       return { structuralOptions: newOpts, totalPrice: calculatePrice(state.baseModel, state.caseShape, state.engraving, newOpts, state.uploadedImage) };
     }),
 
-  setHands: (hands) => 
+  setHands: (hands) =>
     set((state) => {
       const newOpts = { ...state.structuralOptions, hands };
       return { structuralOptions: newOpts, totalPrice: calculatePrice(state.baseModel, state.caseShape, state.engraving, newOpts, state.uploadedImage) };
     }),
 
-  setLugs: (lugs) => 
-    set((state) => {
-      const newOpts = { ...state.structuralOptions, lugs };
-      return { structuralOptions: newOpts, totalPrice: calculatePrice(state.baseModel, state.caseShape, state.engraving, newOpts, state.uploadedImage) };
-    }),
+  setUploadedImage: (imageUrl) =>
+    set((state) => ({
+      uploadedImage: imageUrl,
+      totalPrice: calculatePrice(state.baseModel, state.caseShape, state.engraving, state.structuralOptions, imageUrl)
+    })),
 
-  applyCombination: (model, dialURL, movement, glass, hands) => 
+  applyCombination: (model, dialURL, movement, hands) =>
     set((state) => {
       const newOpts = { ...state.structuralOptions };
       if (movement) newOpts.movement = movement;
-      if (glass) newOpts.glass = glass;
       if (hands) newOpts.hands = hands;
       return {
         baseModel: model,
