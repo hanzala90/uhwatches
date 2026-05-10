@@ -21,7 +21,7 @@ export default function Home() {
         {/* Hero Content */}
         <div className="relative z-20 flex flex-col items-center max-w-4xl pt-24 mt-8 md:mt-0">
           <h2 className="text-6xl md:text-8xl lg:text-9xl font-bold text-white tracking-tighter mb-6 uppercase">
-            Build <br/><span className="text-transparent bg-clip-text bg-gradient-to-b from-[#FFF] to-[#C5A059]">Your Legacy</span>
+            Build <br/><span className="text-transparent bg-clip-text bg-gradient-to-b from-[#FFF] to-[#C5A059]">Your Custom Timepiece</span>
           </h2>
           <p className="text-lg md:text-xl text-white/70 max-w-2xl font-light px-4 tracking-wide leading-relaxed mb-12">
             Experience the pinnacle of horology. Craft a bespoke timepiece from our signature collections, and meticulously customize every facet down to the structural core.

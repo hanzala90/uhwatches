@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { useWatchStore } from '@/store/useWatchStore';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -272,18 +272,6 @@ const WatchPreviewSVG: React.FC = () => {
 
   const [isFlipped, setIsFlipped] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
-  const [dialLoaded, setDialLoaded] = useState(false);
-  const [dialKey, setDialKey] = useState(0);
-  const prevDialURL = useRef(designOptions.dialURL);
-
-  // Fade transition on dial change
-  useEffect(() => {
-    if (prevDialURL.current !== designOptions.dialURL) {
-      setDialLoaded(false);
-      setDialKey(k => k + 1);
-      prevDialURL.current = designOptions.dialURL;
-    }
-  }, [designOptions.dialURL]);
 
   const handleFlip = () => {
     if (isAnimating) return;
@@ -402,33 +390,59 @@ const WatchPreviewSVG: React.FC = () => {
 
 
 
-              {/* Layer 3 — dial */}
+              {/* Layer 3 — dial: drawn in pure SVG to avoid white-ring artifacts from PNGs */}
               <g clipPath={`url(#${dialClipId})`}>
-                {isSquareCase ? (
-                  // Square dial drawn in SVG — proper square shape
-                  <g>
-                    <rect x={cx-sqW/2} y={cy-sqH/2} width={sqW} height={sqH} rx={sqRx}
-                      fill="#111" />
-                    {/* Dial texture from image, clipped */}
-                    <image key={dialKey}
-                      href={designOptions.dialURL || '/images/dial_black.png'}
-                      x={cx-sqW/2} y={cy-sqH/2} width={sqW} height={sqH}
-                      preserveAspectRatio="xMidYMid slice"
-                      onLoad={() => setDialLoaded(true)}
-                      style={{ opacity: dialLoaded ? 1 : 0, transition:'opacity 0.4s ease' } as React.CSSProperties}/>
-                    {/* Square inner chapter ring */}
-                    <rect x={cx-sqW/2+8} y={cy-sqH/2+8} width={sqW-16} height={sqH-16} rx={sqRx-4}
-                      fill="none" stroke="rgba(197,160,89,0.3)" strokeWidth={1}/>
-                  </g>
-                ) : (
-                  <image key={dialKey}
-                    href={designOptions.dialURL || '/images/dial_black.png'}
-                    x={cx-r} y={cy-r} width={r*2} height={r*2}
-                    preserveAspectRatio="xMidYMid slice"
-                    onLoad={() => setDialLoaded(true)}
-                    style={{ opacity: dialLoaded ? 1 : 0, transition:'opacity 0.4s ease' } as React.CSSProperties}/>
-                )}
+                {(() => {
+                  const url = designOptions.dialURL || '';
+                  const isSilver = url.includes('silver');
+                  // Dial base fill
+                  const dialFill   = isSilver ? 'url(#dial-silver-grad)' : 'url(#dial-dark-grad)';
+                  const textColor  = isSilver ? 'rgba(0,0,0,0.85)' : 'rgba(255,255,255,0.9)';
+                  const accentColor = isSilver ? 'rgba(0,0,0,0.6)' : 'rgba(212,175,55,0.95)';
+                  return (
+                    <g>
+                      <defs>
+                        <radialGradient id="dial-dark-grad" cx="40%" cy="35%" r="70%">
+                          <stop offset="0%"   stopColor="#1e1e1e"/>
+                          <stop offset="100%" stopColor="#080808"/>
+                        </radialGradient>
+                        <radialGradient id="dial-silver-grad" cx="40%" cy="35%" r="70%">
+                          <stop offset="0%"   stopColor="#b0b8c0"/>
+                          <stop offset="60%"  stopColor="#8a9098"/>
+                          <stop offset="100%" stopColor="#606870"/>
+                        </radialGradient>
+                      </defs>
+                      {/* Dial base */}
+                      {isSquareCase
+                        ? <rect x={cx-sqW/2} y={cy-sqH/2} width={sqW} height={sqH} rx={sqRx} fill={dialFill}/>
+                        : <circle cx={cx} cy={cy} r={r} fill={dialFill}/>}
+                      {/* Subtle sunburst lines for silver */}
+                      {isSilver && Array.from({length: 72}, (_,i) => {
+                        const rad = (i * 5 * Math.PI) / 180;
+                        return <line key={i}
+                          x1={cx} y1={cy}
+                          x2={r4(cx + r * Math.cos(rad))} y2={r4(cy + r * Math.sin(rad))}
+                          stroke="rgba(255,255,255,0.06)" strokeWidth={1}/>;
+                      })}
+                      {/* XII marker */}
+                      <text x={cx} y={cy - r*0.52} textAnchor="middle"
+                        fontSize={isSilver ? 13 : 12} fontFamily="Georgia,serif"
+                        fill={accentColor} fontWeight="bold">XII</text>
+                      {/* UH brand */}
+                      <text x={cx} y={cy + r*0.28} textAnchor="middle"
+                        fontSize={8} fontFamily="'Helvetica Neue',sans-serif"
+                        fill={isSilver ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.2)'}
+                        letterSpacing={3}>UH CUSTOM</text>
+                      {/* Chapter ring line */}
+                      {isSquareCase
+                        ? <rect x={cx-sqW/2+12} y={cy-sqH/2+12} width={sqW-24} height={sqH-24} rx={sqRx-6}
+                            fill="none" stroke={accentColor} strokeWidth={0.8} opacity={0.4}/>
+                        : <circle cx={cx} cy={cy} r={r-10} fill="none" stroke={accentColor} strokeWidth={0.8} opacity={0.4}/>}
+                    </g>
+                  );
+                })()}
               </g>
+
 
               {/* Layer 4 — uploaded custom image */}
               {uploadedImage && (
@@ -460,9 +474,11 @@ const WatchPreviewSVG: React.FC = () => {
               {/* Center cap */}
               <circle cx={handCx} cy={handCy} r={4} fill="#cccccc" stroke="#666" strokeWidth={1}/>
 
-              {/* Layer 8 — glass shimmer */}
-              <GlassOverlay glass={structuralOptions.glass} cx={cx} cy={cy} r={r}
-                isSquare={isSquareCase} squareW={sqW} squareH={sqH} squareRx={sqRx}/>
+              {/* Layer 8 — subtle glass shimmer */}
+              {!isSquareCase && (
+                <ellipse cx={cx - r*0.1} cy={cy - r*0.28} rx={r*0.55} ry={r*0.2}
+                  fill="rgba(255,255,255,0.04)" style={{filter:'blur(4px)'} as React.CSSProperties}/>
+              )}
 
               {/* Layer 9 — engraving */}
               {engraving.text && (
