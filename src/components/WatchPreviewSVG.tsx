@@ -334,12 +334,81 @@ const WatchPreviewSVG: React.FC = () => {
                 </radialGradient>
               </defs>
 
-              {/* Layer 1 — base watch photo (round only); multiply removes white bg */}
+              {/* Layer 1 — strap PNG (multiply removes white bg, shows strap) */}
               {!isSquareCase && (
                 <image href={baseImgSrc} x={0} y={50} width={500} height={500}
                   preserveAspectRatio="xMidYMid meet"
                   style={{ mixBlendMode:'multiply' } as React.CSSProperties}/>
               )}
+
+              {/* Layer 2 — Round case: SVG metallic bezel + lugs + crown */}
+              {!isSquareCase && (() => {
+                const metalColors: Record<string, [string,string,string,string]> = {
+                  silver:     ['#f0f0f0','#d0d0d0','#909090','#505050'],
+                  gold:       ['#f5e090','#D4A840','#9a6820','#5a3808'],
+                  black:      ['#707070','#404040','#202020','#080808'],
+                  'rose-gold':['#f0c0b0','#d08878','#a05848','#703020'],
+                };
+                const [c0,c1,c2,c3] = metalColors[caseColor] ?? metalColors.silver;
+                const lugH = 40, lugW = 28, rOuter = r + 18, rInner = r + 2;
+                return (
+                  <g>
+                    <defs>
+                      <radialGradient id="case-rg" cx="32%" cy="28%" r="72%">
+                        <stop offset="0%"   stopColor={c0}/>
+                        <stop offset="35%"  stopColor={c1}/>
+                        <stop offset="75%"  stopColor={c2}/>
+                        <stop offset="100%" stopColor={c3}/>
+                      </radialGradient>
+                      {/* Brushed highlight on top edge */}
+                      <linearGradient id="case-edge-top" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%"   stopColor={c3}/>
+                        <stop offset="30%"  stopColor={c0}/>
+                        <stop offset="70%"  stopColor={c1}/>
+                        <stop offset="100%" stopColor={c3}/>
+                      </linearGradient>
+                    </defs>
+
+                    {/* Outer case ring */}
+                    <circle cx={cx} cy={cy} r={rOuter}
+                      fill="url(#case-rg)"
+                      style={{filter:'drop-shadow(0 6px 18px rgba(0,0,0,0.55))'} as React.CSSProperties}/>
+                    {/* Polished top edge highlight */}
+                    <circle cx={cx} cy={cy} r={rOuter} fill="none"
+                      stroke="url(#case-edge-top)" strokeWidth={2} opacity={0.7}/>
+                    {/* Inner shadow step */}
+                    <circle cx={cx} cy={cy} r={rInner} fill="none"
+                      stroke={c3} strokeWidth={3}/>
+                    {/* Inner glint */}
+                    <circle cx={cx} cy={cy} r={rInner} fill="none"
+                      stroke="rgba(255,255,255,0.12)" strokeWidth={1}/>
+
+                    {/* TOP LUGS */}
+                    <rect x={cx - lugW/2 - 14} y={cy - rOuter - lugH + 6} width={lugW} height={lugH} rx={7}
+                      fill="url(#case-rg)"/>
+                    <rect x={cx + 14 - lugW/2} y={cy - rOuter - lugH + 6} width={lugW} height={lugH} rx={7}
+                      fill="url(#case-rg)"/>
+                    {/* Strap connector bar top */}
+                    <rect x={cx - lugW/2 - 14} y={cy - rOuter - 2} width={lugW * 2 + 28} height={6} rx={3}
+                      fill={c2} opacity={0.7}/>
+
+                    {/* BOTTOM LUGS */}
+                    <rect x={cx - lugW/2 - 14} y={cy + rOuter - 6} width={lugW} height={lugH} rx={7}
+                      fill="url(#case-rg)"/>
+                    <rect x={cx + 14 - lugW/2} y={cy + rOuter - 6} width={lugW} height={lugH} rx={7}
+                      fill="url(#case-rg)"/>
+                    {/* Strap connector bar bottom */}
+                    <rect x={cx - lugW/2 - 14} y={cy + rOuter - 4} width={lugW * 2 + 28} height={6} rx={3}
+                      fill={c2} opacity={0.7}/>
+
+                    {/* Crown */}
+                    <rect x={cx + rOuter + 1} y={cy - 11} width={13} height={22} rx={5}
+                      fill="url(#case-rg)"/>
+                    <rect x={cx + rOuter + 3} y={cy - 8} width={9} height={16} rx={3}
+                      fill={c0} opacity={0.5}/>
+                  </g>
+                );
+              })()}
 
               {/* Layer 1b — square case drawn in pure SVG (no white bg image) */}
               {isSquareCase && (() => {
@@ -460,9 +529,10 @@ const WatchPreviewSVG: React.FC = () => {
                 <IndicesRing cx={cx} cy={cy} indexR={indexR} dialURL={designOptions.dialURL}/>
               </g>
 
-              {/* Layer 6 — inner bezel ring (round only — square already has it) */}
+              {/* Layer 6 — inner dial edge ring */}
               {!isSquareCase && (
-                <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth={1.5}/>
+                <circle cx={cx} cy={cy} r={r+1} fill="none"
+                  stroke="rgba(0,0,0,0.6)" strokeWidth={2}/>
               )}
 
               {/* Layer 7 — hands */}
