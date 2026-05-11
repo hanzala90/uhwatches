@@ -28,12 +28,24 @@ const SQUARE_CONFIG: Partial<ModelConfig> & { isSquare: true } = {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function degToRad(deg: number) { return (deg * Math.PI) / 180; }
+function r4(n: number) { return Math.round(n * 10000) / 10000; }
+
+// ─── Octagonal polygon helper ──────────────────────────────────────────────────
+// Returns SVG polygon points string for an N-sided regular polygon
+function octPoints(cx: number, cy: number, r: number, sides: number, cornerR = 0, offsetDeg = 22.5): string {
+  const pts: string[] = [];
+  for (let i = 0; i < sides; i++) {
+    const a = degToRad(i * (360 / sides) + offsetDeg);
+    pts.push(`${r4(cx + r * Math.cos(a))},${r4(cy + r * Math.sin(a))}`);
+  }
+  return pts.join(' ');
+}
+
 
 const HOUR_DEG = 10 * 30 + 10 * 0.5 - 90; // 215
 const MIN_DEG  = 10 * 6 - 90;              // -30
 const SEC_DEG  = 30 * 6 - 90;             // 90
 
-function r4(n: number) { return Math.round(n * 10000) / 10000; }
 
 function indexPath(cx: number, cy: number, indexR: number, angleDeg: number, isHour: boolean) {
   const outer = indexR;
@@ -47,6 +59,7 @@ function indexPath(cx: number, cy: number, indexR: number, angleDeg: number, isH
   const px = r4(-sin * w);         const py = r4( cos * w);
   return `M${ox+px},${oy+py} L${ox-px},${oy-py} L${ix-px},${iy-py} L${ix+px},${iy+py}Z`;
 }
+
 
 // ─── Hand Component ───────────────────────────────────────────────────────────
 
@@ -279,17 +292,46 @@ const WatchPreviewSVG: React.FC = () => {
     setTimeout(() => { setIsFlipped(f => !f); setIsAnimating(false); }, 350);
   };
 
-  const isSquareCase = caseShape === 'square';
+  const isSquareCase    = caseShape === 'square';
+  const isOctCase       = caseShape === 'octagonal';
+  const isOctRoundCase  = caseShape === 'octagonal-round';
+  const isPolygonCase   = isOctCase || isOctRoundCase;
   const baseConfig   = MODEL_CONFIGS[baseModel] ?? MODEL_CONFIGS.leather;
   const cfg: ModelConfig = isSquareCase ? { ...baseConfig, ...SQUARE_CONFIG } : baseConfig;
   const { cx, cy, r, handCx, handCy, hourLen, minLen, secLen, indexR } = cfg;
   const sqW = cfg.squareW ?? 220, sqH = cfg.squareH ?? 220, sqRx = cfg.squareRx ?? 28;
 
+  // Per-model, per-shape dial aperture insets for perfect strap/dial merge
+  // Round shapes: tuned to align dial edge with strap visual edge
+  // Square shapes: symmetric insets to keep dial centered and straps visible
+  let dialInset: number;
+  let dialSqInset: number;
+
+  if (caseShape === 'round') {
+    // Round: fine-tuned for each model to merge exactly with strap
+    dialInset = baseModel === 'leather' ? 18 : baseModel === 'sports' ? 16 : 14;
+    dialSqInset = 0; // Not used for round
+  } else if (caseShape === 'square') {
+    // Square: uniform inset to preserve strap visibility
+    dialInset = 0; // Not used for square
+    dialSqInset = 14;
+  } else {
+    // Octagonal / octagonal-round: balanced approach
+    dialInset = baseModel === 'leather' ? 16 : 12;
+    dialSqInset = 12;
+  }
+
+  const dialR = Math.max(72, r - dialInset);
+  const dialSqW = Math.max(140, sqW - dialSqInset * 1.4);
+  const dialSqH = Math.max(140, sqH - dialSqInset * 1.4);
+  const dialSqRx = Math.max(16, sqRx - 6);
+  const dialIndexR = Math.min(indexR, dialR - 10);
+
   const dialClipId = `dc-${caseShape}`;
   const secColor   = structuralOptions.movement === 'automatic' ? '#cc0000' : '#d4af37';
   const engFont    = engraving.font === 'cursive' ? 'cursive' : engraving.font === 'serif' ? 'Georgia,serif' : '"Helvetica Neue",sans-serif';
 
-  const baseImgSrc = (caseShape !== 'round' && caseShape !== 'skeleton')
+  const baseImgSrc = (caseShape !== 'round')
     ? `/images/watch_${baseModel}_${caseShape}.png`
     : `/images/watch_${baseModel}.png`;
 
@@ -321,8 +363,12 @@ const WatchPreviewSVG: React.FC = () => {
               <defs>
                 <clipPath id={dialClipId}>
                   {isSquareCase
-                    ? <rect x={cx-sqW/2} y={cy-sqH/2} width={sqW} height={sqH} rx={sqRx}/>
-                    : <circle cx={cx} cy={cy} r={r}/>}
+                    ? <rect x={cx-dialSqW/2} y={cy-dialSqH/2} width={dialSqW} height={dialSqH} rx={dialSqRx}/>
+                    : isOctCase
+                      ? <polygon points={octPoints(cx, cy, dialR, 8, 0, 22.5)}/>
+                      : isOctRoundCase
+                        ? <polygon points={octPoints(cx, cy, dialR, 12, 0, 15)}/>
+                        : <circle cx={cx} cy={cy} r={dialR}/>}
                 </clipPath>
                 <filter id="hand-shadow" x="-20%" y="-20%" width="140%" height="140%">
                   <feDropShadow dx="2" dy="3" stdDeviation="3" floodOpacity="0.5"/>
@@ -334,81 +380,11 @@ const WatchPreviewSVG: React.FC = () => {
                 </radialGradient>
               </defs>
 
-              {/* Layer 1 — strap PNG (multiply removes white bg, shows strap) */}
+              {/* Layer 1 — base watch photo */}
               {!isSquareCase && (
                 <image href={baseImgSrc} x={0} y={50} width={500} height={500}
-                  preserveAspectRatio="xMidYMid meet"
-                  style={{ mixBlendMode:'multiply' } as React.CSSProperties}/>
+                  preserveAspectRatio="xMidYMid meet" />
               )}
-
-              {/* Layer 2 — Round case: SVG metallic bezel + lugs + crown */}
-              {!isSquareCase && (() => {
-                const metalColors: Record<string, [string,string,string,string]> = {
-                  silver:     ['#f0f0f0','#d0d0d0','#909090','#505050'],
-                  gold:       ['#f5e090','#D4A840','#9a6820','#5a3808'],
-                  black:      ['#707070','#404040','#202020','#080808'],
-                  'rose-gold':['#f0c0b0','#d08878','#a05848','#703020'],
-                };
-                const [c0,c1,c2,c3] = metalColors[caseColor] ?? metalColors.silver;
-                const lugH = 40, lugW = 28, rOuter = r + 18, rInner = r + 2;
-                return (
-                  <g>
-                    <defs>
-                      <radialGradient id="case-rg" cx="32%" cy="28%" r="72%">
-                        <stop offset="0%"   stopColor={c0}/>
-                        <stop offset="35%"  stopColor={c1}/>
-                        <stop offset="75%"  stopColor={c2}/>
-                        <stop offset="100%" stopColor={c3}/>
-                      </radialGradient>
-                      {/* Brushed highlight on top edge */}
-                      <linearGradient id="case-edge-top" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%"   stopColor={c3}/>
-                        <stop offset="30%"  stopColor={c0}/>
-                        <stop offset="70%"  stopColor={c1}/>
-                        <stop offset="100%" stopColor={c3}/>
-                      </linearGradient>
-                    </defs>
-
-                    {/* Outer case ring */}
-                    <circle cx={cx} cy={cy} r={rOuter}
-                      fill="url(#case-rg)"
-                      style={{filter:'drop-shadow(0 6px 18px rgba(0,0,0,0.55))'} as React.CSSProperties}/>
-                    {/* Polished top edge highlight */}
-                    <circle cx={cx} cy={cy} r={rOuter} fill="none"
-                      stroke="url(#case-edge-top)" strokeWidth={2} opacity={0.7}/>
-                    {/* Inner shadow step */}
-                    <circle cx={cx} cy={cy} r={rInner} fill="none"
-                      stroke={c3} strokeWidth={3}/>
-                    {/* Inner glint */}
-                    <circle cx={cx} cy={cy} r={rInner} fill="none"
-                      stroke="rgba(255,255,255,0.12)" strokeWidth={1}/>
-
-                    {/* TOP LUGS */}
-                    <rect x={cx - lugW/2 - 14} y={cy - rOuter - lugH + 6} width={lugW} height={lugH} rx={7}
-                      fill="url(#case-rg)"/>
-                    <rect x={cx + 14 - lugW/2} y={cy - rOuter - lugH + 6} width={lugW} height={lugH} rx={7}
-                      fill="url(#case-rg)"/>
-                    {/* Strap connector bar top */}
-                    <rect x={cx - lugW/2 - 14} y={cy - rOuter - 2} width={lugW * 2 + 28} height={6} rx={3}
-                      fill={c2} opacity={0.7}/>
-
-                    {/* BOTTOM LUGS */}
-                    <rect x={cx - lugW/2 - 14} y={cy + rOuter - 6} width={lugW} height={lugH} rx={7}
-                      fill="url(#case-rg)"/>
-                    <rect x={cx + 14 - lugW/2} y={cy + rOuter - 6} width={lugW} height={lugH} rx={7}
-                      fill="url(#case-rg)"/>
-                    {/* Strap connector bar bottom */}
-                    <rect x={cx - lugW/2 - 14} y={cy + rOuter - 4} width={lugW * 2 + 28} height={6} rx={3}
-                      fill={c2} opacity={0.7}/>
-
-                    {/* Crown */}
-                    <rect x={cx + rOuter + 1} y={cy - 11} width={13} height={22} rx={5}
-                      fill="url(#case-rg)"/>
-                    <rect x={cx + rOuter + 3} y={cy - 8} width={9} height={16} rx={3}
-                      fill={c0} opacity={0.5}/>
-                  </g>
-                );
-              })()}
 
               {/* Layer 1b — square case drawn in pure SVG (no white bg image) */}
               {isSquareCase && (() => {
@@ -484,14 +460,18 @@ const WatchPreviewSVG: React.FC = () => {
                       </defs>
                       {/* Dial base */}
                       {isSquareCase
-                        ? <rect x={cx-sqW/2} y={cy-sqH/2} width={sqW} height={sqH} rx={sqRx} fill={dialFill}/>
-                        : <circle cx={cx} cy={cy} r={r} fill={dialFill}/>}
+                        ? <rect x={cx-dialSqW/2} y={cy-dialSqH/2} width={dialSqW} height={dialSqH} rx={dialSqRx} fill={dialFill}/>
+                        : isOctCase
+                          ? <polygon points={octPoints(cx, cy, dialR, 8, 0, 22.5)} fill={dialFill}/>
+                          : isOctRoundCase
+                            ? <polygon points={octPoints(cx, cy, dialR, 12, 0, 15)} fill={dialFill}/>
+                            : <circle cx={cx} cy={cy} r={dialR} fill={dialFill}/>}
                       {/* Subtle sunburst lines for silver */}
                       {isSilver && Array.from({length: 72}, (_,i) => {
                         const rad = (i * 5 * Math.PI) / 180;
                         return <line key={i}
                           x1={cx} y1={cy}
-                          x2={r4(cx + r * Math.cos(rad))} y2={r4(cy + r * Math.sin(rad))}
+                          x2={r4(cx + dialR * Math.cos(rad))} y2={r4(cy + dialR * Math.sin(rad))}
                           stroke="rgba(255,255,255,0.06)" strokeWidth={1}/>;
                       })}
                       {/* XII marker */}
@@ -503,11 +483,14 @@ const WatchPreviewSVG: React.FC = () => {
                         fontSize={8} fontFamily="'Helvetica Neue',sans-serif"
                         fill={isSilver ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.2)'}
                         letterSpacing={3}>UH CUSTOM</text>
-                      {/* Chapter ring line */}
+                      {/* Chapter ring */}
                       {isSquareCase
-                        ? <rect x={cx-sqW/2+12} y={cy-sqH/2+12} width={sqW-24} height={sqH-24} rx={sqRx-6}
+                        ? <rect x={cx-dialSqW/2+10} y={cy-dialSqH/2+10} width={dialSqW-20} height={dialSqH-20} rx={Math.max(10, dialSqRx-5)}
                             fill="none" stroke={accentColor} strokeWidth={0.8} opacity={0.4}/>
-                        : <circle cx={cx} cy={cy} r={r-10} fill="none" stroke={accentColor} strokeWidth={0.8} opacity={0.4}/>}
+                        : isPolygonCase
+                          ? <polygon points={octPoints(cx, cy, dialR - 10, isOctCase ? 8 : 12, 0, isOctCase ? 22.5 : 15)}
+                              fill="none" stroke={accentColor} strokeWidth={0.8} opacity={0.4}/>
+                          : <circle cx={cx} cy={cy} r={dialR-8} fill="none" stroke={accentColor} strokeWidth={0.8} opacity={0.4}/>} 
                     </g>
                   );
                 })()}
@@ -518,21 +501,20 @@ const WatchPreviewSVG: React.FC = () => {
               {uploadedImage && (
                 <g clipPath={`url(#${dialClipId})`}>
                   <image href={uploadedImage}
-                    x={isSquareCase ? cx-sqW/2 : cx-r} y={isSquareCase ? cy-sqH/2 : cy-r}
-                    width={isSquareCase ? sqW : r*2} height={isSquareCase ? sqH : r*2}
+                    x={isSquareCase ? cx-dialSqW/2 : cx-dialR} y={isSquareCase ? cy-dialSqH/2 : cy-dialR}
+                    width={isSquareCase ? dialSqW : dialR*2} height={isSquareCase ? dialSqH : dialR*2}
                     preserveAspectRatio="xMidYMid slice" opacity={0.85}/>
                 </g>
               )}
 
               {/* Layer 5 — indices ring */}
               <g clipPath={`url(#${dialClipId})`}>
-                <IndicesRing cx={cx} cy={cy} indexR={indexR} dialURL={designOptions.dialURL}/>
+                <IndicesRing cx={cx} cy={cy} indexR={dialIndexR} dialURL={designOptions.dialURL}/>
               </g>
 
-              {/* Layer 6 — inner dial edge ring */}
+              {/* Layer 6 — inner bezel ring (round only — square already has it) */}
               {!isSquareCase && (
-                <circle cx={cx} cy={cy} r={r+1} fill="none"
-                  stroke="rgba(0,0,0,0.6)" strokeWidth={2}/>
+                <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth={1.5}/>
               )}
 
               {/* Layer 7 — hands */}
