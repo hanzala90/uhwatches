@@ -4,6 +4,7 @@ export type WatchModel = 'leather' | 'metal' | 'sports';
 export type CaseShape = 'round' | 'square' | 'octagonal' | 'octagonal-round';
 export type CaseColor = 'silver' | 'gold' | 'black' | 'rose-gold';
 export type EngravingFont = 'minimal' | 'cursive' | 'serif';
+export type OctDialId = 'oct-gold-cream' | 'oct-grey-chrono' | 'oct-black-wheel' | 'oct-olive-green' | 'oct-teal-gold' | 'oct-navy-blue';
 
 export type MovementTier = 'basic' | 'premium';
 export type MovementType = 'quartz' | 'mechanical' | 'automatic';
@@ -29,6 +30,7 @@ interface DesignOptionsState {
   dialURL: string;
   strapColor: string;
   caseColor: CaseColor;
+  octDialId: OctDialId;
 }
 
 export interface WatchStoreState {
@@ -53,6 +55,7 @@ export interface WatchStoreState {
   setBuckle: (b: BuckleType) => void;
   setHands: (h: HandsType) => void;
   setUploadedImage: (imageUrl: string | null) => void;
+  setOctDialId: (id: OctDialId) => void;
   applyCombination: (model: WatchModel, dialURL: string, movement?: MovementType, hands?: HandsType) => void;
   resetDesign: () => void;
 }
@@ -102,6 +105,7 @@ const defaultOptions = {
     dialURL: '/images/dial_black.png',
     strapColor: '#000000',
     caseColor: 'silver' as CaseColor,
+    octDialId: 'oct-navy-blue' as OctDialId,
   },
   structuralOptions: {
     movementTier: 'basic' as MovementTier,
@@ -193,6 +197,9 @@ export const useWatchStore = create<WatchStoreState>((set) => ({
       uploadedImage: imageUrl,
       totalPrice: calculatePrice(state.baseModel, state.caseShape, state.engraving, state.structuralOptions, imageUrl)
     })),
+
+  setOctDialId: (octDialId) =>
+    set((state) => ({ designOptions: { ...state.designOptions, octDialId } })),
 
   applyCombination: (model, dialURL, movement, hands) =>
     set((state) => {

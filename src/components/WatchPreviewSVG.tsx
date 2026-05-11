@@ -2,6 +2,7 @@
 
 import React, { useState, useRef } from 'react';
 import { useWatchStore } from '@/store/useWatchStore';
+import { OCT_DIALS } from './OctDialSVG';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -281,7 +282,10 @@ const CaseBackView: React.FC<{
 
 const WatchPreviewSVG: React.FC = () => {
   const { baseModel, caseShape, designOptions, structuralOptions, engraving, uploadedImage } = useWatchStore();
-  const caseColor = (designOptions as any).caseColor || 'silver';
+  const caseColor = designOptions.caseColor || 'silver';
+  const octDialId = designOptions.octDialId || 'oct-navy-blue';
+  const octDialEntry = OCT_DIALS.find(d => d.id === octDialId);
+  const OctDialComponent = octDialEntry?.Component;
 
   const [isFlipped, setIsFlipped] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -436,14 +440,15 @@ const WatchPreviewSVG: React.FC = () => {
 
 
 
-              {/* Layer 3 — dial: drawn in pure SVG to avoid white-ring artifacts from PNGs */}
+              {/* Layer 3 — dial */}
               <g clipPath={`url(#${dialClipId})`}>
-                {(() => {
-                  const url = designOptions.dialURL || '';
-                  const isSilver = url.includes('silver');
-                  // Dial base fill
-                  const dialFill   = isSilver ? 'url(#dial-silver-grad)' : 'url(#dial-dark-grad)';
-                  const textColor  = isSilver ? 'rgba(0,0,0,0.85)' : 'rgba(255,255,255,0.9)';
+                {isPolygonCase && OctDialComponent ? (
+                  <g transform={`translate(${cx},${cy})`}>
+                    <OctDialComponent r={dialR} />
+                  </g>
+                ) : (() => {
+                  const isSilver = (designOptions.dialURL || '').includes('silver');
+                  const dialFill    = isSilver ? 'url(#dial-silver-grad)' : 'url(#dial-dark-grad)';
                   const accentColor = isSilver ? 'rgba(0,0,0,0.6)' : 'rgba(212,175,55,0.95)';
                   return (
                     <g>
@@ -458,39 +463,18 @@ const WatchPreviewSVG: React.FC = () => {
                           <stop offset="100%" stopColor="#606870"/>
                         </radialGradient>
                       </defs>
-                      {/* Dial base */}
                       {isSquareCase
                         ? <rect x={cx-dialSqW/2} y={cy-dialSqH/2} width={dialSqW} height={dialSqH} rx={dialSqRx} fill={dialFill}/>
-                        : isOctCase
-                          ? <polygon points={octPoints(cx, cy, dialR, 8, 0, 22.5)} fill={dialFill}/>
-                          : isOctRoundCase
-                            ? <polygon points={octPoints(cx, cy, dialR, 12, 0, 15)} fill={dialFill}/>
-                            : <circle cx={cx} cy={cy} r={dialR} fill={dialFill}/>}
-                      {/* Subtle sunburst lines for silver */}
+                        : <circle cx={cx} cy={cy} r={dialR} fill={dialFill}/>}
                       {isSilver && Array.from({length: 72}, (_,i) => {
                         const rad = (i * 5 * Math.PI) / 180;
-                        return <line key={i}
-                          x1={cx} y1={cy}
-                          x2={r4(cx + dialR * Math.cos(rad))} y2={r4(cy + dialR * Math.sin(rad))}
-                          stroke="rgba(255,255,255,0.06)" strokeWidth={1}/>;
+                        return <line key={i} x1={cx} y1={cy} x2={r4(cx + dialR * Math.cos(rad))} y2={r4(cy + dialR * Math.sin(rad))} stroke="rgba(255,255,255,0.06)" strokeWidth={1}/>;
                       })}
-                      {/* XII marker */}
-                      <text x={cx} y={cy - r*0.52} textAnchor="middle"
-                        fontSize={isSilver ? 13 : 12} fontFamily="Georgia,serif"
-                        fill={accentColor} fontWeight="bold">XII</text>
-                      {/* UH brand */}
-                      <text x={cx} y={cy + r*0.28} textAnchor="middle"
-                        fontSize={8} fontFamily="'Helvetica Neue',sans-serif"
-                        fill={isSilver ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.2)'}
-                        letterSpacing={3}>UH CUSTOM</text>
-                      {/* Chapter ring */}
+                      <text x={cx} y={cy - dialR*0.52} textAnchor="middle" fontSize={12} fontFamily="Georgia,serif" fill={accentColor} fontWeight="bold">XII</text>
+                      <text x={cx} y={cy + dialR*0.28} textAnchor="middle" fontSize={8} fontFamily="'Helvetica Neue',sans-serif" fill={isSilver ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.2)'} letterSpacing={3}>UH CUSTOM</text>
                       {isSquareCase
-                        ? <rect x={cx-dialSqW/2+10} y={cy-dialSqH/2+10} width={dialSqW-20} height={dialSqH-20} rx={Math.max(10, dialSqRx-5)}
-                            fill="none" stroke={accentColor} strokeWidth={0.8} opacity={0.4}/>
-                        : isPolygonCase
-                          ? <polygon points={octPoints(cx, cy, dialR - 10, isOctCase ? 8 : 12, 0, isOctCase ? 22.5 : 15)}
-                              fill="none" stroke={accentColor} strokeWidth={0.8} opacity={0.4}/>
-                          : <circle cx={cx} cy={cy} r={dialR-8} fill="none" stroke={accentColor} strokeWidth={0.8} opacity={0.4}/>} 
+                        ? <rect x={cx-dialSqW/2+10} y={cy-dialSqH/2+10} width={dialSqW-20} height={dialSqH-20} rx={Math.max(10,dialSqRx-5)} fill="none" stroke={accentColor} strokeWidth={0.8} opacity={0.4}/>
+                        : <circle cx={cx} cy={cy} r={dialR-8} fill="none" stroke={accentColor} strokeWidth={0.8} opacity={0.4}/>}
                     </g>
                   );
                 })()}

@@ -31,26 +31,9 @@ const ProceduralWatch = () => {
           <boxGeometry args={[2.5, 2.5, 0.4]} />
           <meshStandardMaterial color={caseColor} metalness={0.8} roughness={0.2} />
         </mesh>
-      ) : caseShape === 'skeleton' ? (
-        <group>
-          {/* Outer ring */}
-          <mesh position={[0, 0, -0.2]}>
-            <torusGeometry args={[1.2, 0.15, 32, 64]} />
-            <meshStandardMaterial color={caseColor} metalness={0.8} roughness={0.2} />
-          </mesh>
-          {/* Inner spokes */}
-          <mesh position={[0, 0, -0.2]}>
-            <cylinderGeometry args={[0.05, 0.05, 2.4, 16]} />
-            <meshStandardMaterial color="#666" metalness={0.9} roughness={0.1} />
-          </mesh>
-          <mesh position={[0, 0, -0.2]} rotation={[0, 0, Math.PI / 2]}>
-            <cylinderGeometry args={[0.05, 0.05, 2.4, 16]} />
-            <meshStandardMaterial color="#666" metalness={0.9} roughness={0.1} />
-          </mesh>
-        </group>
       ) : (
         <mesh position={[0, 0, -0.2]}>
-          <cylinderGeometry args={[1.4, 1.4, 0.4, 64]} />
+          <cylinderGeometry args={[1.4, 1.4, 0.4, (caseShape === 'octagonal' || caseShape === 'octagonal-round') ? 8 : 64]} />
           <meshStandardMaterial color={caseColor} metalness={0.8} roughness={0.2} />
         </mesh>
       )}
@@ -69,10 +52,8 @@ const ProceduralWatch = () => {
       <mesh position={[0, 0, 0.01]}>
         {caseShape === 'square' ? (
           <planeGeometry args={[2.3, 2.3]} />
-        ) : caseShape === 'skeleton' ? (
-          <planeGeometry args={[2.2, 2.2]} /> // Might be transparent texture
         ) : (
-          <circleGeometry args={[1.3, 64]} />
+          <circleGeometry args={[1.3, (caseShape === 'octagonal' || caseShape === 'octagonal-round') ? 8 : 64]} />
         )}
         <meshBasicMaterial map={dialTexture} transparent side={THREE.DoubleSide} />
       </mesh>
@@ -99,7 +80,7 @@ const ProceduralWatch = () => {
         {caseShape === 'square' ? (
           <boxGeometry args={[2.4, 2.4, 0.05]} />
         ) : (
-          <cylinderGeometry args={[1.35, 1.35, 0.05, 64]} />
+          <cylinderGeometry args={[1.35, 1.35, 0.05, (caseShape === 'octagonal' || caseShape === 'octagonal-round') ? 8 : 64]} />
         )}
         <meshPhysicalMaterial 
           transparent 

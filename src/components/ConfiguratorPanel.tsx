@@ -5,6 +5,7 @@ import {
   useWatchStore, WatchModel, EngravingFont, CaseColor,
   MovementTier, MovementType, CaseBackType, BuckleType, HandsType
 } from '@/store/useWatchStore';
+import { OCT_DIALS } from '@/components/OctDialSVG';
 import { Type, Image as LucideImage, ChevronRight, ChevronLeft, CheckCircle2, Zap, Star } from 'lucide-react';
 import clsx from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -24,7 +25,7 @@ const ConfiguratorPanel = () => {
   const {
     baseModel, setBaseModel, caseShape, setCaseShape,
     engraving, setEngravingText, setEngravingFont,
-    designOptions, setDialURL, setCaseColor,
+    designOptions, setDialURL, setCaseColor, setOctDialId,
     structuralOptions, setMovementTier, setMovement, setCustomHands, setCaseBack, setBuckle, setHands,
     totalPrice, setUploadedImage, uploadedImage
   } = useWatchStore();
@@ -147,30 +148,59 @@ const ConfiguratorPanel = () => {
           <p className="text-white/50 text-sm">Choose the background canvas of your watch.</p>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          {[
-            { id: 'black', url: '/images/dial_black.png', label: 'Black Roman', sublabel: 'Gold indices' },
-            { id: 'silver', url: '/images/dial_silver.png', label: 'Silver Sport', sublabel: 'Brushed sunburst' },
-          ].map(dial => (
-            <button
-              key={dial.id}
-              onClick={() => setDialURL(dial.url)}
-              className={cn(
-                "h-36 rounded-2xl border-2 transition-all duration-300 overflow-hidden relative group flex flex-col items-end justify-end p-2 bg-cover bg-center",
-                designOptions.dialURL === dial.url ? "border-[#C5A059] shadow-[0_0_20px_rgba(197,160,89,0.4)]" : "border-white/10 opacity-70 hover:opacity-100 hover:border-white/30"
-              )}
-              style={{ backgroundImage: `url(${dial.url})` }}
-            >
-              {designOptions.dialURL === dial.url && (
-                <div className="absolute top-2 left-2"><CheckCircle2 size={16} className="text-[#C5A059]" /></div>
-              )}
-              <div className="bg-black/80 backdrop-blur-sm text-left w-full px-2 py-1.5 rounded-lg">
-                <p className="text-white text-[11px] font-semibold leading-tight">{dial.label}</p>
-                <p className="text-white/50 text-[9px] uppercase tracking-wider">{dial.sublabel}</p>
-              </div>
-            </button>
-          ))}
-        </div>
+        {/* Show oct-dial selector when case is octagonal */}
+        {(caseShape === 'octagonal' || caseShape === 'octagonal-round') ? (
+          <div className="space-y-4">
+            <p className="text-[10px] uppercase tracking-widest text-white/40">Octagonal Dial Style</p>
+            <div className="grid grid-cols-2 gap-3">
+              {OCT_DIALS.map(dial => (
+                <button
+                  key={dial.id}
+                  onClick={() => setOctDialId(dial.id)}
+                  className={cn(
+                    "flex flex-col items-start gap-2 p-3 rounded-xl border-2 transition-all duration-300",
+                    designOptions.octDialId === dial.id
+                      ? "border-[#C5A059] bg-[#C5A059]/10 shadow-[0_0_15px_rgba(197,160,89,0.2)]"
+                      : "border-white/10 bg-white/5 hover:border-white/30"
+                  )}
+                >
+                  {/* Mini SVG preview */}
+                  <svg viewBox="-105 -105 210 210" className="w-full h-20 rounded-lg overflow-hidden" xmlns="http://www.w3.org/2000/svg">
+                    <dial.Component r={105} />
+                  </svg>
+                  <p className={cn("font-semibold text-xs", designOptions.octDialId === dial.id ? "text-[#C5A059]" : "text-white/70")}>{dial.label}</p>
+                  <p className="text-white/40 text-[9px]">{dial.sublabel}</p>
+                  {designOptions.octDialId === dial.id && <CheckCircle2 size={14} className="text-[#C5A059]" />}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-4">
+            {[
+              { id: 'black', url: '/images/dial_black.png', label: 'Black Roman', sublabel: 'Gold indices' },
+              { id: 'silver', url: '/images/dial_silver.png', label: 'Silver Sport', sublabel: 'Brushed sunburst' },
+            ].map(dial => (
+              <button
+                key={dial.id}
+                onClick={() => setDialURL(dial.url)}
+                className={cn(
+                  "h-36 rounded-2xl border-2 transition-all duration-300 overflow-hidden relative group flex flex-col items-end justify-end p-2 bg-cover bg-center",
+                  designOptions.dialURL === dial.url ? "border-[#C5A059] shadow-[0_0_20px_rgba(197,160,89,0.4)]" : "border-white/10 opacity-70 hover:opacity-100 hover:border-white/30"
+                )}
+                style={{ backgroundImage: `url(${dial.url})` }}
+              >
+                {designOptions.dialURL === dial.url && (
+                  <div className="absolute top-2 left-2"><CheckCircle2 size={16} className="text-[#C5A059]" /></div>
+                )}
+                <div className="bg-black/80 backdrop-blur-sm text-left w-full px-2 py-1.5 rounded-lg">
+                  <p className="text-white text-[11px] font-semibold leading-tight">{dial.label}</p>
+                  <p className="text-white/50 text-[9px] uppercase tracking-wider">{dial.sublabel}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );
