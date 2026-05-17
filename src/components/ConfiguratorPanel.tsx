@@ -81,8 +81,8 @@ const ConfiguratorPanel = () => {
           <div className="grid grid-cols-1 gap-3">
             {([  
               { id: 'leather', label: 'Leather Strap', desc: 'Genuine leather, hand-stitched', img: '/images/strap_black.png', price: 10000 },
-              { id: 'metal', label: 'Metal Bracelet', desc: 'Stainless steel link bracelet', img: '/images/watch_metal.png', price: 15000 },
-              { id: 'sports', label: 'Sports Rubber Band', desc: 'Premium silicone sport strap', img: '/images/watch_sports.png', price: 12000 },
+              { id: 'metal', label: 'Metal Bracelet', desc: 'Stainless steel link bracelet', img: '/images/cases/metal-case-preview.png', price: 15000 },
+              { id: 'sports', label: 'Sports Rubber Band', desc: 'Premium silicone sport strap', img: '/images/cases/sports-case-preview.jpeg', price: 12000 },
             ] as { id: WatchModel; label: string; desc: string; img: string; price: number }[]).map((model) => (
               <button
                 key={model.id}
@@ -99,7 +99,7 @@ const ConfiguratorPanel = () => {
                   <p className={cn("font-semibold text-sm", baseModel === model.id ? "text-white" : "text-white/70")}>{model.label}</p>
                   <p className="text-xs text-white/40">{model.desc}</p>
                 </div>
-                <span className="text-[10px] text-white/40 shrink-0">PKR {model.price.toLocaleString()}</span>
+                <span className="text-[10px] text-white/40 shrink-0">PKR {model.price.toLocaleString('en-US')}</span>
                 {baseModel === model.id && <CheckCircle2 size={16} className="text-[#C5A059] shrink-0" />}
               </button>
             ))}
@@ -446,7 +446,7 @@ const ConfiguratorPanel = () => {
         <div className="bg-white/5 rounded-2xl p-6 border border-white/10 space-y-4">
           <div className="flex justify-between items-center pb-4 border-b border-white/10 text-sm">
             <span className="text-white/60">Base Watch</span>
-            <span className="font-semibold text-white capitalize">{baseModel} Strap / {caseShape} Case</span>
+            <span className="font-semibold text-white capitalize">{baseModel.replace('-', ' ')} Strap / {caseShape.replace('-', ' ')} Case</span>
           </div>
           <div className="flex justify-between items-center pb-4 border-b border-white/10 text-sm">
             <span className="text-white/60">Movement</span>
@@ -461,7 +461,7 @@ const ConfiguratorPanel = () => {
 
           <div className="pt-2 flex justify-between items-end">
             <span className="text-xs uppercase tracking-widest text-white/50">Estimated Total</span>
-            <span className="text-3xl font-light text-white">PKR {totalPrice.toLocaleString()}</span>
+            <span className="text-3xl font-light text-white">PKR {totalPrice.toLocaleString('en-US')}</span>
           </div>
         </div>
       </div>
@@ -472,10 +472,10 @@ const ConfiguratorPanel = () => {
     <div className="w-full flex flex-col h-[600px] lg:h-[800px] bg-[#0a0a0a] border border-white/10 rounded-3xl overflow-hidden shadow-2xl relative">
 
       {/* Progress Header */}
-      <div className="w-full px-8 py-6 border-b border-white/10 bg-black/40 backdrop-blur-md shrink-0">
+      <div className="w-full px-6 md:px-8 py-5 md:py-6 border-b border-white/10 bg-black/40 backdrop-blur-md shrink-0">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-semibold tracking-widest uppercase text-white/80">Configure</h2>
-          <span className="text-xs text-white/40 font-mono">STEP {step} OF {TOTAL_STEPS}</span>
+          <h2 className="text-base md:text-sm font-bold md:font-semibold tracking-widest uppercase text-white/90">Configure</h2>
+          <span className="text-sm md:text-xs text-white/50 font-mono font-medium">STEP {step} OF {TOTAL_STEPS}</span>
         </div>
         <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
           <div
@@ -508,7 +508,7 @@ const ConfiguratorPanel = () => {
           )}
           <div className="flex flex-col hidden sm:flex">
             <span className="text-[10px] uppercase tracking-widest text-white/40">Running Total</span>
-            <span className="font-medium text-[#C5A059]">PKR {totalPrice.toLocaleString()}</span>
+            <span className="font-medium text-[#C5A059]">PKR {totalPrice.toLocaleString('en-US')}</span>
           </div>
         </div>
 

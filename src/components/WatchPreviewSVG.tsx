@@ -316,9 +316,11 @@ const WatchPreviewSVG: React.FC = () => {
     dialInset = baseModel === 'leather' ? 18 : baseModel === 'sports' ? 16 : 14;
     dialSqInset = 0; // Not used for round
   } else if (caseShape === 'square') {
-    // Square: uniform inset to preserve strap visibility
+    // Square: tuned per-model so uploaded square artwork fits cleanly inside the aperture
     dialInset = 0; // Not used for square
-    dialSqInset = 14;
+    if (baseModel === 'leather') dialSqInset = 18;
+    else if (baseModel === 'sports') dialSqInset = 16;
+    else dialSqInset = 14;
   } else {
     // Octagonal / octagonal-round: balanced approach
     dialInset = baseModel === 'leather' ? 16 : 12;
@@ -335,9 +337,20 @@ const WatchPreviewSVG: React.FC = () => {
   const secColor   = structuralOptions.movement === 'automatic' ? '#cc0000' : '#d4af37';
   const engFont    = engraving.font === 'cursive' ? 'cursive' : engraving.font === 'serif' ? 'Georgia,serif' : '"Helvetica Neue",sans-serif';
 
-  const baseImgSrc = (caseShape !== 'round')
-    ? `/images/watch_${baseModel}_${caseShape}.png`
-    : `/images/watch_${baseModel}.png`;
+  const baseImgSrc = baseModel === 'metal'
+    ? `/images/cases/metal-case.svg`
+    : (caseShape !== 'round')
+      ? `/images/watch_${baseModel}_${caseShape}.png`
+      : `/images/watch_${baseModel}.png`;
+
+  const squareCaseImageSrc = (() => {
+    // Prefer color-specific SVGs if you add them to `public/images/cases/` named
+    // `Square-case-<caseColor>.svg` (e.g. Square-case-gold.svg). Fallback to generic.
+    const normalized = (caseColor || 'silver').toString().toLowerCase().replace(/\s+/g, '-');
+    return `/images/cases/Square-case-${normalized}.svg`;
+  })();
+
+  const [squareImageSrcState, setSquareImageSrcState] = useState(squareCaseImageSrc);
 
   return (
     <div className="w-full h-full flex flex-col justify-center items-center bg-[#111]/50 backdrop-blur-md rounded-3xl overflow-hidden shadow-2xl border border-white/5 relative group">
@@ -390,53 +403,18 @@ const WatchPreviewSVG: React.FC = () => {
                   preserveAspectRatio="xMidYMid meet" />
               )}
 
-              {/* Layer 1b — square case drawn in pure SVG (no white bg image) */}
-              {isSquareCase && (() => {
-                const metalColors: Record<string, [string,string,string]> = {
-                  silver:    ['#d8d8d8','#a0a0a0','#606060'],
-                  gold:      ['#e8c96a','#C5A059','#7a5c1e'],
-                  black:     ['#555','#2a2a2a','#111'],
-                  'rose-gold':['#e8a090','#c07060','#8a3828'],
-                };
-                const [c1,c2,c3] = metalColors[caseColor] ?? metalColors.silver;
-                const lugW = 38, lugH = 28, lugRx = 7;
-                // strap
-                const strapColor = baseModel === 'metal' ? c2 : baseModel === 'sports' ? '#333' : '#222';
-                return (
-                  <g>
-                    {/* Top strap */}
-                    <rect x={cx-14} y={40} width={28} height={cy-sqH/2-22} rx={6} fill={strapColor} />
-                    <rect x={cx-10} y={40} width={3} height={cy-sqH/2-22} rx={2} fill="rgba(255,255,255,0.08)" />
-                    {/* Bottom strap */}
-                    <rect x={cx-14} y={cy+sqH/2+22} width={28} height={560-(cy+sqH/2+22)} rx={6} fill={strapColor} />
-                    {/* Outer bezel */}
-                    <defs>
-                      <linearGradient id="sq-bezel" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stopColor={c1}/>
-                        <stop offset="50%" stopColor={c2}/>
-                        <stop offset="100%" stopColor={c3}/>
-                      </linearGradient>
-                    </defs>
-                    <rect x={cx-sqW/2-22} y={cy-sqH/2-22} width={sqW+44} height={sqH+44} rx={sqRx+10}
-                      fill={`url(#sq-bezel)`}
-                      style={{filter:'drop-shadow(0 8px 24px rgba(0,0,0,0.6))'}} />
-                    {/* Top lug left */}
-                    <rect x={cx-sqW/2-6} y={cy-sqH/2-22-lugH} width={lugW} height={lugH+4} rx={lugRx} fill={`url(#sq-bezel)`}/>
-                    {/* Top lug right */}
-                    <rect x={cx+sqW/2+6-lugW} y={cy-sqH/2-22-lugH} width={lugW} height={lugH+4} rx={lugRx} fill={`url(#sq-bezel)`}/>
-                    {/* Bottom lug left */}
-                    <rect x={cx-sqW/2-6} y={cy+sqH/2+18} width={lugW} height={lugH+4} rx={lugRx} fill={`url(#sq-bezel)`}/>
-                    {/* Bottom lug right */}
-                    <rect x={cx+sqW/2+6-lugW} y={cy+sqH/2+18} width={lugW} height={lugH+4} rx={lugRx} fill={`url(#sq-bezel)`}/>
-                    {/* Inner bezel step */}
-                    <rect x={cx-sqW/2-8} y={cy-sqH/2-8} width={sqW+16} height={sqH+16} rx={sqRx+2}
-                      fill="none" stroke={c3} strokeWidth={3}/>
-                    {/* Crown */}
-                    <rect x={cx+sqW/2+22} y={cy-10} width={14} height={20} rx={5} fill={c2}/>
-                    <rect x={cx+sqW/2+24} y={cy-7} width={10} height={14} rx={3} fill={c1}/>
-                  </g>
-                );
-              })()}
+              {/* Layer 1b — square case image asset */}
+              {isSquareCase && (
+                <image
+                  href={squareImageSrcState}
+                  x={50}
+                  y={100}
+                  width={400}
+                  height={400}
+                  preserveAspectRatio="xMidYMid meet"
+                  onError={() => setSquareImageSrcState('/images/cases/Square-case.svg')}
+                />
+              )}
 
 
 
@@ -487,7 +465,7 @@ const WatchPreviewSVG: React.FC = () => {
                   <image href={uploadedImage}
                     x={isSquareCase ? cx-dialSqW/2 : cx-dialR} y={isSquareCase ? cy-dialSqH/2 : cy-dialR}
                     width={isSquareCase ? dialSqW : dialR*2} height={isSquareCase ? dialSqH : dialR*2}
-                    preserveAspectRatio="xMidYMid slice" opacity={0.85}/>
+                    preserveAspectRatio={isSquareCase ? 'xMidYMid meet' : 'xMidYMid slice'} opacity={0.85}/>
                 </g>
               )}
 
