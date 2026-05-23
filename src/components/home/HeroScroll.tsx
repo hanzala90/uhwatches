@@ -28,16 +28,17 @@ function Particles() {
 
 /* ─── Component label with line connector ─────────────────────────────────── */
 function Label({
-  text, side = 'right', opacity,
+  text, side = 'right', opacity, lineWidth = 32
 }: {
   text: string;
   side?: 'left' | 'right';
   opacity: MotionValue<number>;
+  lineWidth?: number;
 }) {
   return (
-    <m.div style={{ opacity }} className={`flex items-center gap-2 ${side === 'left' ? 'flex-row-reverse' : ''}`}>
-      <div className="h-px w-8 bg-[#C5A059]/50" />
-      <span className="text-[9px] md:text-[10px] tracking-[0.35em] uppercase text-[#C5A059] font-semibold whitespace-nowrap select-none">
+    <m.div style={{ opacity }} className={`flex items-center gap-3 ${side === 'left' ? 'flex-row-reverse' : ''}`}>
+      <div className="h-px bg-[#C5A059]/40" style={{ width: `${lineWidth}px` }} />
+      <span className="text-[10px] md:text-[11px] tracking-[0.35em] uppercase text-[#C5A059] font-semibold whitespace-nowrap select-none">
         {text}
       </span>
     </m.div>
@@ -113,15 +114,15 @@ export default function HeroScroll() {
   const watchFilter  = useTransform(watchBlurRaw, (v) => `blur(${v}px)`);
 
   /* strap splits */
-  const strapTopY = useTransform(prog, [0.45, 0.68, 0.72, 1], [0, -120, -120, 0]);
-  const strapBotY = useTransform(prog, [0.45, 0.68, 0.72, 1], [0,  120,  120, 0]);
+  const strapTopY = useTransform(prog, [0.45, 0.68, 0.72, 1], [0, -75, -75, 0]);
+  const strapBotY = useTransform(prog, [0.45, 0.68, 0.72, 1], [0,  75,  75, 0]);
 
   /* case ring */
   const caseRingScale   = useTransform(prog, [0.45, 0.68, 0.72, 1], [1, 1.15, 1.15, 1]);
   const caseRingOpacity = useTransform(prog, [0.45, 0.68, 0.72, 1], [1, 0.3,  0.3,  1]);
 
   /* dial */
-  const dialY = useTransform(prog, [0.45, 0.68, 0.72, 1], [0, -80, -80, 0]);
+  const dialY = useTransform(prog, [0.45, 0.68, 0.72, 1], [0, -45, -45, 0]);
 
   /* labels */
   const labelOpacity = useTransform(prog, [0.5, 0.6, 0.67, 0.71], [0, 1, 1, 0]);
@@ -183,19 +184,24 @@ export default function HeroScroll() {
             {/* STRAP TOP */}
             <m.div style={{ y: strapTopY }}
               className="absolute top-0 left-1/2 -translate-x-1/2 w-[72px] h-[120px] z-10 overflow-hidden">
-              <img src="/images/strap_black.png" alt="" className="w-full h-full object-cover object-bottom" style={{ objectPosition: 'bottom center' }} />
+              <img src="/images/hero_strap_top.png" alt="" className="w-full h-full object-cover object-bottom" style={{ objectPosition: 'bottom center' }} />
             </m.div>
 
             {/* CASE + DIAL — the center block */}
             <div className="relative w-[220px] h-[220px] md:w-[260px] md:h-[260px] z-20 flex items-center justify-center">
-              {/* Case ring */}
+              {/* Case ring with clipped straps */}
               <m.div style={{ scale: caseRingScale, opacity: caseRingOpacity }}
                 className="absolute inset-0">
-                <img src="/images/watch_leather.png" alt="Watch case" className="w-full h-full object-contain" />
+                <img src="/images/hero_watch_case.png" alt="Watch case" className="w-full h-full object-contain" style={{ clipPath: 'circle(48% at center)' }} />
               </m.div>
-              {/* Dial face */}
+              {/* Movement behind dial - clipped to a circle to fit within the bezel */}
+              <m.div style={{ scale: caseRingScale, opacity: caseRingOpacity }}
+                className="absolute w-[38.8%] h-[38.8%] top-[30.6%] left-[30.6%] z-10 rounded-full overflow-hidden">
+                <img src="/images/hero_movement.png" alt="Movement" className="w-full h-full object-contain" />
+              </m.div>
+              {/* Dial face perfectly scaled and positioned inside bezel - clipped to a circle */}
               <m.div style={{ y: dialY }}
-                className="absolute inset-[16%] z-10">
+                className="absolute w-[38.8%] h-[38.8%] top-[30.6%] left-[30.6%] z-20 rounded-full overflow-hidden">
                 <WatchFace />
               </m.div>
             </div>
@@ -203,24 +209,24 @@ export default function HeroScroll() {
             {/* STRAP BOTTOM */}
             <m.div style={{ y: strapBotY }}
               className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[72px] h-[120px] z-10 overflow-hidden">
-              <img src="/images/strap_black.png" alt="" className="w-full h-full object-cover object-top" style={{ objectPosition: 'top center' }} />
+              <img src="/images/hero_strap_bottom.png" alt="" className="w-full h-full object-cover object-top" style={{ objectPosition: 'top center' }} />
             </m.div>
           </m.div>
 
           {/* ── Component labels (beat 3) ────────────────────────────────── */}
           <div className="absolute inset-0 pointer-events-none flex items-center justify-center hidden md:flex">
             <div className="relative w-[600px] h-[500px]">
-              <m.div style={{ opacity: labelOpacity }} className="absolute top-[10%] right-[8%]">
-                <Label text="Dial" opacity={labelOpacity} />
+              <m.div style={{ opacity: labelOpacity }} className="absolute top-[41%] right-[12%]">
+                <Label text="Dial" opacity={labelOpacity} lineWidth={120} />
               </m.div>
-              <m.div style={{ opacity: labelOpacity }} className="absolute top-[45%] left-[2%]">
-                <Label text="Case" side="left" opacity={labelOpacity} />
+              <m.div style={{ opacity: labelOpacity }} className="absolute top-[50%] -translate-y-1/2 left-[8%]">
+                <Label text="Case" side="left" opacity={labelOpacity} lineWidth={60} />
               </m.div>
-              <m.div style={{ opacity: labelOpacity }} className="absolute top-[5%] left-[12%]">
-                <Label text="Strap" side="left" opacity={labelOpacity} />
+              <m.div style={{ opacity: labelOpacity }} className="absolute top-[12%] left-[10%]">
+                <Label text="Strap" side="left" opacity={labelOpacity} lineWidth={100} />
               </m.div>
-              <m.div style={{ opacity: labelOpacity }} className="absolute bottom-[12%] left-[4%]">
-                <Label text="Movement" side="left" opacity={labelOpacity} />
+              <m.div style={{ opacity: labelOpacity }} className="absolute bottom-[12%] left-[6%]">
+                <Label text="Movement" side="left" opacity={labelOpacity} lineWidth={100} />
               </m.div>
             </div>
           </div>
@@ -235,8 +241,8 @@ export default function HeroScroll() {
           {/* ── Beat 3: Every component ──────────────────────────────────── */}
           <m.div style={{ opacity: beat3Opacity }}
             className="absolute bottom-[10%] left-0 right-0 flex flex-col items-center pointer-events-none select-none px-4">
-            <p className="text-white/55 text-sm md:text-lg font-light tracking-[0.28em] uppercase text-center">
-              Every component. <span className="text-white font-normal">Your choice.</span>
+            <p className="text-white/90 text-sm md:text-lg font-light tracking-[0.28em] uppercase text-center">
+              Every component. <span className="text-white font-semibold">Your choice.</span>
             </p>
           </m.div>
 
@@ -244,7 +250,7 @@ export default function HeroScroll() {
           <m.div style={{ opacity: beat4Opacity, y: beat4Y }}
             className="absolute bottom-[14%] left-0 right-0 flex flex-col items-center gap-7 pointer-events-none px-4">
             <div className="text-center">
-              <p className="text-white/60 text-xl md:text-4xl font-thin tracking-[0.18em] uppercase">Time,</p>
+              <p className="text-white/90 text-xl md:text-4xl font-thin tracking-[0.18em] uppercase">Time,</p>
               <p className="text-[#C5A059] text-4xl md:text-7xl font-bold tracking-tight uppercase leading-none">Redefined.</p>
             </div>
             <m.div style={{ opacity: ctaOpacity, scale: ctaScale }} className="pointer-events-auto">
