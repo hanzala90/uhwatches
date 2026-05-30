@@ -40,6 +40,10 @@ export interface WatchStoreState {
   designOptions: DesignOptionsState;
   structuralOptions: StructuralOptionsState;
   uploadedImage: string | null;
+  uploadedImageScale: number;
+  uploadedImageX: number;
+  uploadedImageY: number;
+  uploadedImageRotation: number;
   totalPrice: number;
   setBaseModel: (model: WatchModel) => void;
   setCaseShape: (shape: CaseShape) => void;
@@ -55,6 +59,10 @@ export interface WatchStoreState {
   setBuckle: (b: BuckleType) => void;
   setHands: (h: HandsType) => void;
   setUploadedImage: (imageUrl: string | null) => void;
+  setUploadedImageScale: (scale: number) => void;
+  setUploadedImageX: (x: number) => void;
+  setUploadedImageY: (y: number) => void;
+  setUploadedImageRotation: (r: number) => void;
   setOctDialId: (id: OctDialId) => void;
   applyCombination: (model: WatchModel, dialURL: string, movement?: MovementType, hands?: HandsType) => void;
   resetDesign: () => void;
@@ -116,6 +124,10 @@ const defaultOptions = {
     customHands: false,
   },
   uploadedImage: null,
+  uploadedImageScale: 1,
+  uploadedImageX: 0,
+  uploadedImageY: 0,
+  uploadedImageRotation: 0,
   totalPrice: BASE_PRICES.leather,
 };
 
@@ -195,8 +207,24 @@ export const useWatchStore = create<WatchStoreState>((set) => ({
   setUploadedImage: (imageUrl) =>
     set((state) => ({
       uploadedImage: imageUrl,
+      uploadedImageScale: 1,
+      uploadedImageX: 0,
+      uploadedImageY: 0,
+      uploadedImageRotation: 0,
       totalPrice: calculatePrice(state.baseModel, state.caseShape, state.engraving, state.structuralOptions, imageUrl)
     })),
+
+  setUploadedImageScale: (scale) =>
+    set(() => ({ uploadedImageScale: scale })),
+
+  setUploadedImageX: (x) =>
+    set(() => ({ uploadedImageX: x })),
+
+  setUploadedImageY: (y) =>
+    set(() => ({ uploadedImageY: y })),
+
+  setUploadedImageRotation: (r) =>
+    set(() => ({ uploadedImageRotation: r })),
 
   setOctDialId: (octDialId) =>
     set((state) => ({ designOptions: { ...state.designOptions, octDialId } })),

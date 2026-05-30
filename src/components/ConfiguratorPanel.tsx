@@ -27,7 +27,9 @@ const ConfiguratorPanel = () => {
     engraving, setEngravingText, setEngravingFont,
     designOptions, setDialURL, setCaseColor, setOctDialId,
     structuralOptions, setMovementTier, setMovement, setCustomHands, setCaseBack, setBuckle, setHands,
-    totalPrice, setUploadedImage, uploadedImage
+    totalPrice, setUploadedImage, uploadedImage,
+    uploadedImageScale, uploadedImageX, uploadedImageY, uploadedImageRotation,
+    setUploadedImageScale, setUploadedImageX, setUploadedImageY, setUploadedImageRotation
   } = useWatchStore();
 
 
@@ -380,10 +382,106 @@ const ConfiguratorPanel = () => {
             />
 
             {uploadedImage ? (
-              <div className="w-full aspect-video rounded-xl border border-white/20 bg-black overflow-hidden relative">
-                <img src={uploadedImage} alt="Custom Dial" className="w-full h-full object-cover opacity-80" />
-                <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                  <CheckCircle2 className="text-[#25D366] w-12 h-12" />
+              <div className="space-y-4">
+                <div className="w-full aspect-video rounded-xl border border-white/20 bg-black overflow-hidden relative">
+                  <img
+                    src={uploadedImage}
+                    alt="Custom Dial"
+                    className="w-full h-full object-contain opacity-80"
+                    style={{
+                      transform: `translate(${uploadedImageX}px, ${uploadedImageY}px) scale(${uploadedImageScale}) rotate(${uploadedImageRotation}deg)`,
+                      transition: 'transform 0.05s ease-out'
+                    }}
+                  />
+                  <div className="absolute inset-0 pointer-events-none flex items-center justify-center bg-black/20">
+                    <CheckCircle2 className="text-[#25D366] w-10 h-10 opacity-60" />
+                  </div>
+                </div>
+
+                {/* Image adjustment sliders */}
+                <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] uppercase tracking-widest text-[#C5A059] font-bold">Image Settings</p>
+                    <button
+                      onClick={() => {
+                        setUploadedImageScale(1);
+                        setUploadedImageX(0);
+                        setUploadedImageY(0);
+                        setUploadedImageRotation(0);
+                      }}
+                      className="text-[9px] uppercase tracking-widest text-white/40 hover:text-[#C5A059] transition-colors"
+                    >
+                      Reset Adjustments
+                    </button>
+                  </div>
+
+                  {/* Scale / Zoom */}
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between text-[10px] text-white/50">
+                      <span>Zoom (Scale)</span>
+                      <span className="font-mono text-white/90">{(uploadedImageScale * 100).toFixed(0)}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0.5"
+                      max="3.0"
+                      step="0.05"
+                      value={uploadedImageScale}
+                      onChange={(e) => setUploadedImageScale(parseFloat(e.target.value))}
+                      className="w-full h-1 bg-white/10 accent-[#C5A059] rounded-lg appearance-none cursor-pointer"
+                    />
+                  </div>
+
+                  {/* Offset X */}
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between text-[10px] text-white/50">
+                      <span>Position X</span>
+                      <span className="font-mono text-white/90">{uploadedImageX > 0 ? `+${uploadedImageX}` : uploadedImageX}px</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="-100"
+                      max="100"
+                      step="1"
+                      value={uploadedImageX}
+                      onChange={(e) => setUploadedImageX(parseInt(e.target.value))}
+                      className="w-full h-1 bg-white/10 accent-[#C5A059] rounded-lg appearance-none cursor-pointer"
+                    />
+                  </div>
+
+                  {/* Offset Y */}
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between text-[10px] text-white/50">
+                      <span>Position Y</span>
+                      <span className="font-mono text-white/90">{uploadedImageY > 0 ? `+${uploadedImageY}` : uploadedImageY}px</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="-100"
+                      max="100"
+                      step="1"
+                      value={uploadedImageY}
+                      onChange={(e) => setUploadedImageY(parseInt(e.target.value))}
+                      className="w-full h-1 bg-white/10 accent-[#C5A059] rounded-lg appearance-none cursor-pointer"
+                    />
+                  </div>
+
+                  {/* Rotation */}
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between text-[10px] text-white/50">
+                      <span>Rotation</span>
+                      <span className="font-mono text-white/90">{uploadedImageRotation}°</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="-180"
+                      max="180"
+                      step="1"
+                      value={uploadedImageRotation}
+                      onChange={(e) => setUploadedImageRotation(parseInt(e.target.value))}
+                      className="w-full h-1 bg-white/10 accent-[#C5A059] rounded-lg appearance-none cursor-pointer"
+                    />
+                  </div>
                 </div>
               </div>
             ) : (

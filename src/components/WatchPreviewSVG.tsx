@@ -281,7 +281,18 @@ const CaseBackView: React.FC<{
 // ─── Main SVG Watch Preview ───────────────────────────────────────────────────
 
 const WatchPreviewSVG: React.FC = () => {
-  const { baseModel, caseShape, designOptions, structuralOptions, engraving, uploadedImage } = useWatchStore();
+  const {
+    baseModel,
+    caseShape,
+    designOptions,
+    structuralOptions,
+    engraving,
+    uploadedImage,
+    uploadedImageScale,
+    uploadedImageX,
+    uploadedImageY,
+    uploadedImageRotation
+  } = useWatchStore();
   const caseColor = designOptions.caseColor || 'silver';
   const octDialId = designOptions.octDialId || 'oct-navy-blue';
   const octDialEntry = OCT_DIALS.find(d => d.id === octDialId);
@@ -465,6 +476,7 @@ const WatchPreviewSVG: React.FC = () => {
                   <image href={uploadedImage}
                     x={isSquareCase ? cx-dialSqW/2 : cx-dialR} y={isSquareCase ? cy-dialSqH/2 : cy-dialR}
                     width={isSquareCase ? dialSqW : dialR*2} height={isSquareCase ? dialSqH : dialR*2}
+                    transform={`translate(${uploadedImageX}, ${uploadedImageY}) translate(${cx}, ${cy}) scale(${uploadedImageScale}) rotate(${uploadedImageRotation}) translate(${-cx}, ${-cy})`}
                     preserveAspectRatio={isSquareCase ? 'xMidYMid meet' : 'xMidYMid slice'} opacity={0.85}/>
                 </g>
               )}
